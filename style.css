@@ -24,8 +24,7 @@ body {
 
 #kaomoji-cursor {
     position: fixed;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     pointer-events: none;
     font-size: 20px;
     z-index: 9999;
@@ -48,20 +47,24 @@ body {
 .sidebar { display: flex; flex-direction: column; gap: 20px; }
 .card { background-color: var(--card-bg); padding: 20px; border-radius: 8px; }
 
-.dashboard-card { display: flex; flex-direction: column; gap: 20px; }
-.stats-container { display: flex; gap: 20px; }
-.stat-box { flex: 1; padding: 10px; border-radius: 6px; background-color: var(--card-hover-bg); }
+/* NEW Simplified Stats Card */
+.stats-card {
+    display: flex;
+    gap: 20px;
+    padding: 15px; /* Less padding for a tighter look */
+}
+.stat-box {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+}
 #visits-box { border: 1px solid transparent; transition: border-color 0.2s; }
 #visits-box:hover { border-color: var(--accent-color); }
 .stat-box h2 { margin: 0 0 5px 0; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
 .stat-box p { margin: 0; font-size: 1.8rem; font-weight: bold; }
-.now-playing-container { border-top: 1px solid var(--card-hover-bg); padding-top: 15px; }
-.now-playing-content { display: flex; align-items: center; gap: 15px; min-height: 48px; }
-.now-playing-content img { width: 48px; height: 48px; border-radius: 4px; }
-.now-playing-info { display: flex; flex-direction: column; }
-.now-playing-info strong { font-size: 0.9rem; }
-.now-playing-info span { font-size: 0.8rem; color: var(--text-secondary); }
 
+/* Comment Section */
 .timeline-container h2 { margin: 0 0 15px 0; color: var(--text-secondary); font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
 .post-box { display: flex; flex-direction: column; gap: 10px; }
 .post-box input, .post-box textarea { background-color: var(--card-hover-bg); border: 1px solid #4a3c43; color: var(--text-color); padding: 12px; border-radius: 6px; font-family: inherit; font-size: 1rem; resize: vertical; }
@@ -73,10 +76,12 @@ body {
 .comment-time { font-size: 0.85rem; color: var(--text-secondary); }
 .comment-message { margin: 0; line-height: 1.5; word-break: break-word; color: #dcd7da; }
 
+/* Other Widgets */
 .music-player-container h2, .card > h2 { font-weight: 700; font-size: 1.2rem; margin: 0 0 15px 0; }
 .music-player-container audio { width: 100%; color-scheme: light; }
 .chart-container { height: 150px; }
 
+/* Map Modal Styles */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
 .modal-overlay.visible { opacity: 1; pointer-events: auto; }
 .modal-content { background: var(--card-bg); padding: 20px; border-radius: 8px; width: 90%; max-width: 900px; position: relative; }

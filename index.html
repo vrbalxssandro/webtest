@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Homepage</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Scripts for the map visualization and helpers -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.world.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
-    <!-- Script for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -24,22 +22,15 @@
         </main>
 
         <aside class="sidebar">
-            <!-- NEW "Dashboard" card combines Stats and Now Playing -->
-            <div class="dashboard-card card">
-                <div class="stats-container">
-                     <div class="stat-box" id="visits-box" title="Click to see visit map!">
-                        <h2>Total Visits</h2>
-                        <p id="visits-count">0</p>
-                    </div>
-                    <div class="stat-box">
-                        <h2>Total Posts</h2>
-                        <p id="posts-count">0</p>
-                    </div>
+            <!-- Stats are now in their own clean card -->
+            <div class="stats-card card">
+                 <div class="stat-box" id="visits-box" title="Click to see visit map!">
+                    <h2>Total Visits</h2>
+                    <p id="visits-count">0</p>
                 </div>
-                <div id="now-playing" class="now-playing-container">
-                    <div class="now-playing-content">
-                        <p>Loading...</p>
-                    </div>
+                <div class="stat-box">
+                    <h2>Total Posts</h2>
+                    <p id="posts-count">0</p>
                 </div>
             </div>
 
