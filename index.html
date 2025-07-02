@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Homepage</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Existing helper scripts -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.world.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- NEW: The wavesurfer.js library -->
     <script src="https://unpkg.com/wavesurfer.js"></script>
 </head>
 <body>
@@ -38,15 +36,20 @@
                 <div id="timeline" class="timeline"><p class="loading-message">Loading comments...</p></div>
             </div>
 
-            <!-- ENTIRELY NEW MUSIC PLAYER STRUCTURE -->
+            <!-- NEW SOUNDCLOUD-STYLE MUSIC PLAYER -->
             <div id="music-player-container" class="card">
                 <h2>Music Player</h2>
+                <div class="track-info">
+                    <span id="track-title">No track loaded</span>
+                </div>
                 <div id="waveform"></div>
                 <div id="waveform-loading">Drop an audio file or click "Upload"</div>
-                <div class="player-controls">
-                    <button id="play-btn">Play</button>
+                <div class="custom-player-controls">
+                    <button id="play-btn" class="control-btn"></button>
+                    <span id="time-current">0:00</span>
+                    <span id="time-total">0:00</span>
                     <div class="volume-control">
-                        <span>🔊</span>
+                        <span id="volume-icon">🔊</span>
                         <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
                     </div>
                     <label for="audio-upload" class="upload-btn">Upload</label>

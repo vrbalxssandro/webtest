@@ -10,30 +10,10 @@
     --accent-color-hover: #c979a8;
 }
 
-html, body, a, button, input, textarea {
-    cursor: none;
-}
-
-body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: 'Roboto', sans-serif;
-    margin: 0;
-    padding: 20px;
-}
-
-body.modal-open #kaomoji-cursor {
-    display: none;
-}
-#kaomoji-cursor {
-    position: fixed;
-    top: 0; left: 0;
-    pointer-events: none;
-    font-size: 20px;
-    z-index: 9999;
-    color: var(--text-color);
-    text-shadow: 0 0 5px var(--card-bg);
-}
+html, body, a, button, input, textarea { cursor: none; }
+body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Roboto', sans-serif; margin: 0; padding: 20px; }
+body.modal-open #kaomoji-cursor { display: none; }
+#kaomoji-cursor { position: fixed; top: 0; left: 0; pointer-events: none; font-size: 20px; z-index: 9999; color: var(--text-color); text-shadow: 0 0 5px var(--card-bg); }
 #kaomoji-cursor.top-left { transform: translate(5px, 5px); }
 #kaomoji-cursor.center-mouth { transform: translate(-50%, -50%); }
 
@@ -72,66 +52,25 @@ body.modal-open #kaomoji-cursor {
 .card > h2 { font-weight: 700; font-size: 1.2rem; margin: 0 0 15px 0; }
 .chart-container { height: 150px; }
 
-/* === NEW MUSIC PLAYER STYLES === */
-#music-player-container {
-    position: relative;
-}
-#waveform {
-    height: 90px;
-    cursor: pointer !important;
-}
-#waveform-loading {
-    position: absolute;
-    top: 55px;
-    left: 20px;
-    right: 20px;
-    text-align: center;
-    color: var(--text-secondary);
-    pointer-events: none;
-}
-.player-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 15px;
-    gap: 15px;
-}
-.player-controls button, .upload-btn {
-    background-color: var(--card-hover-bg);
-    border: 1px solid #4a3c43;
-    color: var(--text-color);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-family: inherit;
-    transition: background-color 0.2s;
-}
-.player-controls button:hover, .upload-btn:hover {
-    background-color: #4a3c43;
-}
-.volume-control {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex-grow: 1;
-}
-.volume-control input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 4px;
-    background: #4a3c43;
-    outline: none;
-    border-radius: 2px;
-}
-.volume-control input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 14px;
-    height: 14px;
-    background: var(--accent-color);
-    border-radius: 50%;
-}
+/* === SOUNDCLOUD-STYLE PLAYER === */
+#music-player-container { position: relative; }
+.track-info { margin-bottom: 10px; color: var(--text-secondary); font-size: 0.9rem; height: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#waveform { height: 70px; cursor: pointer !important; }
+#waveform-loading { position: absolute; top: 75px; left: 20px; right: 20px; text-align: center; color: var(--text-secondary); pointer-events: none; transition: opacity 0.3s; }
+.custom-player-controls { display: flex; align-items: center; margin-top: 10px; gap: 10px; }
+.control-btn { background: none; border: none; padding: 0; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; }
+.control-btn svg { fill: var(--text-color); transition: fill 0.2s; }
+.control-btn:hover svg { fill: var(--accent-color); }
+#time-current, #time-total { font-size: 0.85rem; color: var(--text-secondary); min-width: 35px; }
+#time-total { text-align: right; }
+.volume-control { display: flex; align-items: center; gap: 5px; flex-grow: 1; }
+.volume-control span { cursor: pointer !important; }
+.volume-control input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: #4a3c43; outline: none; border-radius: 2px; }
+.volume-control input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: var(--accent-color); border-radius: 50%; }
+.upload-btn { background-color: var(--card-hover-bg); border: 1px solid #4a3c43; color: var(--text-color); padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; transition: background-color 0.2s; text-align: center; }
+.upload-btn:hover { background-color: #4a3c43; }
+
+/* Settings Card */
 .settings-card button { width: 100%; background-color: var(--card-hover-bg); border: 1px solid #4a3c43; color: var(--text-color); padding: 10px; border-radius: 6px; font-size: 0.9rem; transition: background-color 0.2s, border-color 0.2s; }
 .settings-card button:hover { background-color: #4a3c43; border-color: var(--accent-color); }
 
@@ -141,8 +80,10 @@ body.modal-open #kaomoji-cursor {
 .close-button { position: absolute; top: 10px; right: 15px; background: none; border: none; color: var(--text-secondary); font-size: 2rem; cursor: pointer !important; }
 #map-container { height: 500px; }
 .datamap { position: relative; }
-.datamaps-hoverover { background: var(--card-hover-bg) !important; color: var(--text-color) !important; border: 1px solid var(--accent-color) !important; border-radius: 6px !important; padding: 6px 10px !important; font-family: 'Roboto', sans-serif !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important; pointer-events: none !important; transform: translate(15px, 10px) !important; }
-.popup-visits-count { font-size: 1.1em; font-weight: bold; color: var(--accent-color); }
+
+/* Reworked Map Popup */
+.datamaps-hoverover { background: var(--card-bg) !important; color: var(--text-color) !important; border: 1px solid var(--accent-color) !important; border-radius: 6px !important; padding: 10px 15px !important; font-family: 'Roboto', sans-serif !important; font-size: 0.9rem !important; box-shadow: 0 5px 15px rgba(0,0,0,0.4) !important; pointer-events: none !important; transform: translate(15px, 10px) !important; }
+.popup-visits-count { font-size: 1.2em; font-weight: bold; color: var(--accent-color); }
 
 @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } .projects-main { order: 1; } .sidebar { order: 2; } }
 .timeline::-webkit-scrollbar { width: 8px; } .timeline::-webkit-scrollbar-track { background: #3a2e33; border-radius: 4px; } .timeline::-webkit-scrollbar-thumb { background: var(--text-secondary); border-radius: 4px; }

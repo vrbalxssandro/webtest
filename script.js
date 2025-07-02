@@ -38,13 +38,17 @@ const dom = {
     mapContainer: document.getElementById('map-container'),
     activityChartCanvas: document.getElementById('recent-activity-chart'),
     cursorToggleBtn: document.getElementById('cursor-toggle-btn'),
-    // Music Player Elements
+    // NEW Music Player Elements
     musicPlayerContainer: document.getElementById('music-player-container'),
     waveformContainer: document.getElementById('waveform'),
     waveformLoading: document.getElementById('waveform-loading'),
     playBtn: document.getElementById('play-btn'),
     volumeSlider: document.getElementById('volume-slider'),
-    audioUpload: document.getElementById('audio-upload')
+    volumeIcon: document.getElementById('volume-icon'),
+    audioUpload: document.getElementById('audio-upload'),
+    trackTitle: document.getElementById('track-title'),
+    timeCurrent: document.getElementById('time-current'),
+    timeTotal: document.getElementById('time-total')
 };
 
 // -------------------
@@ -138,47 +142,77 @@ function setupCursorToggle() {
     });
 }
 
+// -------------------
+// NEW: MUSIC PLAYER LOGIC
+// -------------------
 function initializeMusicPlayer() {
     if (!dom.waveformContainer) return;
-    const wavesurfer = WaveSurfer.create({ container: '#waveform', waveColor: '#a09398', progressColor: '#d38fba', barWidth: 3, barRadius: 3, barGap: 2, height: 90, responsive: true, hideScrollbar: true, });
+
+    const playIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M8 5v14l11-7z"></path></svg>`;
+    const pauseIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>`;
+    dom.playBtn.innerHTML = playIcon;
+
+    const wavesurfer = WaveSurfer.create({
+        container: '#waveform',
+        waveColor: '#a09398',
+        progressColor: '#d38fba',
+        barWidth: 3,
+        barRadius: 3,
+        barGap: 2,
+        height: 70,
+        responsive: true,
+        hideScrollbar: true,
+    });
+
+    const formatTime = (seconds) => {
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+    wavesurfer.on('ready', () => {
+        dom.waveformLoading.style.opacity = '0';
+        dom.timeTotal.textContent = formatTime(wavesurfer.getDuration());
+        wavesurfer.play();
+    });
+
+    wavesurfer.on('audioprocess', () => {
+        dom.timeCurrent.textContent = formatTime(wavesurfer.getCurrentTime());
+    });
+
+    wavesurfer.on('play', () => { dom.playBtn.innerHTML = pauseIcon; });
+    wavesurfer.on('pause', () => { dom.playBtn.innerHTML = playIcon; });
+    wavesurfer.on('finish', () => { dom.playBtn.innerHTML = playIcon; wavesurfer.seekTo(0); });
+    wavesurfer.on('error', (err) => { dom.waveformLoading.textContent = `Error: ${err}`; dom.waveformLoading.style.opacity = '1'; });
+
     dom.playBtn.onclick = () => wavesurfer.playPause();
     dom.volumeSlider.oninput = (e) => wavesurfer.setVolume(e.target.value);
-    wavesurfer.on('play', () => { dom.playBtn.textContent = 'Pause'; });
-    wavesurfer.on('pause', () => { dom.playBtn.textContent = 'Play'; });
-    wavesurfer.on('ready', () => { dom.waveformLoading.style.display = 'none'; wavesurfer.play(); });
-    const loadFile = (file) => { if (file) { dom.waveformLoading.textContent = 'Loading...'; dom.waveformLoading.style.display = 'block'; const reader = new FileReader(); reader.onload = (e) => { wavesurfer.load(e.target.result); }; reader.readAsDataURL(file); } };
+    dom.volumeIcon.onclick = () => wavesurfer.toggleMute();
+    wavesurfer.on('volume', (volume) => { dom.volumeIcon.textContent = volume > 0 ? '🔊' : '🔇'; });
+
+    const loadFile = (file) => {
+        if (file) {
+            dom.waveformLoading.textContent = 'Loading waveform...';
+            dom.waveformLoading.style.opacity = '1';
+            dom.trackTitle.textContent = file.name;
+            wavesurfer.load(URL.createObjectURL(file));
+        }
+    };
     dom.audioUpload.onchange = (e) => loadFile(e.target.files[0]);
     dom.musicPlayerContainer.ondragover = (e) => e.preventDefault();
     dom.musicPlayerContainer.ondrop = (e) => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); };
 }
 
-function bindEventListeners() {
-    if (dom.postButton) {
-        dom.postButton.addEventListener('click', async () => {
-            const username = dom.usernameInput.value.trim() || 'Anonymous';
-            const message = dom.commentInput.value.trim();
-            if (!message) return alert('Message cannot be empty.');
-            dom.postButton.disabled = true; dom.postButton.textContent = '...';
-            try {
-                await api.postComment(username, message);
-                const comments = await api.fetchComments();
-                ui.renderComments(comments);
-                dom.commentInput.value = '';
-            } catch (error) { console.error('Error posting comment:', error); alert('An error occurred.');
-            } finally { dom.postButton.disabled = false; dom.postButton.textContent = 'Post'; }
-        });
-    }
-    if (dom.commentInput) dom.commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dom.postButton.click(); } });
-    if (dom.visitsBox) dom.visitsBox.addEventListener('click', async () => ui.showVisitorMap(await api.fetchVisitSummary()));
-    if (dom.closeModalButton) dom.closeModalButton.addEventListener('click', () => { dom.mapModal.classList.remove('visible'); document.body.classList.remove('modal-open'); });
-    if (dom.mapModal) dom.mapModal.addEventListener('click', (e) => { if (e.target === dom.mapModal) { dom.mapModal.classList.remove('visible'); document.body.classList.remove('modal-open'); } });
-}
-
+// -------------------
+// INITIALIZATION LOGIC
+// -------------------
+function setupCursorToggle() { if (!dom.cursorToggleBtn || !dom.kaomojiCursor) return; const KEY = 'cursorAlignment'; let alignment = localStorage.getItem(KEY) || 'center-mouth'; const apply = (align) => { dom.kaomojiCursor.classList.remove('center-mouth', 'top-left'); dom.kaomojiCursor.classList.add(align); localStorage.setItem(KEY, align); }; apply(alignment); dom.cursorToggleBtn.addEventListener('click', () => { const newAlign = dom.kaomojiCursor.classList.contains('center-mouth') ? 'top-left' : 'center-mouth'; apply(newAlign); }); }
+function bindEventListeners() { if (dom.postButton) { dom.postButton.addEventListener('click', async () => { const u = dom.usernameInput.value.trim() || 'Anonymous', m = dom.commentInput.value.trim(); if (!m) return alert('Message cannot be empty.'); dom.postButton.disabled = true; dom.postButton.textContent = '...'; try { await api.postComment(u, m); const c = await api.fetchComments(); ui.renderComments(c); dom.commentInput.value = ''; } catch (e) { console.error('Error posting comment:', e); alert('An error occurred.'); } finally { dom.postButton.disabled = false; dom.postButton.textContent = 'Post'; } }); } if (dom.commentInput) dom.commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dom.postButton.click(); } }); if (dom.visitsBox) dom.visitsBox.addEventListener('click', async () => ui.showVisitorMap(await api.fetchVisitSummary())); if (dom.closeModalButton) dom.closeModalButton.addEventListener('click', () => { dom.mapModal.classList.remove('visible'); document.body.classList.remove('modal-open'); }); if (dom.mapModal) dom.mapModal.addEventListener('click', (e) => { if (e.target === dom.mapModal) { dom.mapModal.classList.remove('visible'); document.body.classList.remove('modal-open'); } }); }
 async function main() {
     ui.setupKaomojiCursor();
     setupCursorToggle();
     bindEventListeners();
-    initializeMusicPlayer();
+    initializeMusicPlayer(); // Initialize the new player
     ui.renderProjects(config.PROJECTS);
     const [comments, visitData, activityData] = await Promise.all([api.fetchComments(), api.fetchVisitSummary(), api.fetchActivityData()]);
     ui.renderComments(comments);
@@ -192,5 +226,3 @@ async function main() {
     }
     setInterval(() => api.fetchActivityData().then(ui.drawActivityChart), config.REFRESH_INTERVAL);
 }
-
-document.addEventListener('DOMContentLoaded', main);
