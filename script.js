@@ -47,7 +47,10 @@ const dom = {
     audioUpload: document.getElementById('audio-upload'),
     trackTitle: document.getElementById('track-title'),
     timeCurrent: document.getElementById('time-current'),
-    timeTotal: document.getElementById('time-total')
+    timeTotal: document.getElementById('time-total'),
+    // New elements for physics balls
+    physicsContainer: document.getElementById('physics-container'),
+    addBallBtn: document.getElementById('add-ball-btn')
 };
 
 // -------------------
@@ -104,6 +107,123 @@ const api = {
 };
 
 // -------------------
+// BOUNCY BALLS
+// -------------------
+const physics = {
+    balls: [],
+    gravity: 0.6,
+    drag: 0.999,
+    bounceFactor: 0.85,
+    mouse: { x: 0, y: 0, vx: 0, vy: 0, down: false },
+    lastMousePos: { x: 0, y: 0 },
+    
+    init() {
+        this.addEventListeners();
+        this.createBall(); // Start with one ball
+        this.createBall(); // And another one
+        this.animate();
+    },
+
+    createBall(x, y) {
+        const radius = Math.random() * 20 + 25; // Size between 25px and 45px
+        const ball = {
+            el: document.createElement('div'),
+            radius: radius,
+            x: x || Math.random() * (window.innerWidth - radius * 2) + radius,
+            y: y || Math.random() * (window.innerHeight / 2),
+            vx: Math.random() * 10 - 5,
+            vy: Math.random() * 10 - 5,
+            isDragging: false,
+        };
+
+        const hue = Math.random() * 360;
+        ball.el.className = 'bouncy-ball';
+        ball.el.style.width = `${radius * 2}px`;
+        ball.el.style.height = `${radius * 2}px`;
+        ball.el.style.background = `radial-gradient(circle at 35% 35%, hsl(${hue}, 100%, 80%), hsl(${hue}, 90%, 50%))`;
+        
+        ball.el.addEventListener('mousedown', (e) => this.handleMouseDown(e, ball));
+
+        dom.physicsContainer.appendChild(ball.el);
+        this.balls.push(ball);
+    },
+    
+    animate() {
+        this.balls.forEach(ball => {
+            if (!ball.isDragging) {
+                // Apply physics
+                ball.vx *= this.drag;
+                ball.vy *= this.drag;
+                ball.vy += this.gravity;
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+
+                // Wall collisions
+                if (ball.x + ball.radius > window.innerWidth) {
+                    ball.x = window.innerWidth - ball.radius;
+                    ball.vx *= -this.bounceFactor;
+                } else if (ball.x - ball.radius < 0) {
+                    ball.x = ball.radius;
+                    ball.vx *= -this.bounceFactor;
+                }
+                if (ball.y + ball.radius > window.innerHeight) {
+                    ball.y = window.innerHeight - ball.radius;
+                    ball.vy *= -this.bounceFactor;
+                } else if (ball.y - ball.radius < 0) {
+                    ball.y = ball.radius;
+                    ball.vy *= -this.bounceFactor;
+                }
+            }
+
+            ball.el.style.transform = `translate3d(${ball.x - ball.radius}px, ${ball.y - ball.radius}px, 0)`;
+        });
+
+        requestAnimationFrame(() => this.animate());
+    },
+
+    addEventListeners() {
+        window.addEventListener('mousemove', (e) => {
+            this.mouse.vx = e.clientX - this.lastMousePos.x;
+            this.mouse.vy = e.clientY - this.lastMousePos.y;
+            this.lastMousePos = { x: e.clientX, y: e.clientY };
+            
+            this.balls.forEach(ball => {
+                if (ball.isDragging) {
+                    ball.x = this.lastMousePos.x + ball.dragOffsetX;
+                    ball.y = this.lastMousePos.y + ball.dragOffsetY;
+                }
+            });
+        });
+        
+        window.addEventListener('mouseup', () => {
+            this.balls.forEach(ball => {
+                if (ball.isDragging) {
+                    ball.isDragging = false;
+                    ball.vx = this.mouse.vx;
+                    ball.vy = this.mouse.vy;
+                }
+            });
+        });
+        
+        if (dom.addBallBtn) {
+            dom.addBallBtn.addEventListener('click', () => {
+                this.createBall(window.innerWidth / 2, window.innerHeight / 2);
+            });
+        }
+    },
+    
+    handleMouseDown(e, ball) {
+        e.preventDefault();
+        ball.isDragging = true;
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.dragOffsetX = ball.x - e.clientX;
+        ball.dragOffsetY = ball.y - e.clientY;
+    }
+};
+
+
+// -------------------
 // UI UPDATES
 // -------------------
 const ui = {
@@ -111,8 +231,8 @@ const ui = {
 
     setupKaomojiCursor() {
         if (!dom.kaomojiCursor) return;
-
-        // Helper functions to calculate contrast for dynamic cursor color
+        
+        // This logic makes the cursor color change based on the background.
         const getLuminance = (color) => {
             const rgb = color.match(/\d+/g);
             if (!rgb) return 0;
@@ -122,7 +242,6 @@ const ui = {
             });
             return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
         };
-
         const getEffectiveBackgroundColor = (element) => {
             let el = element;
             while (el) {
@@ -130,26 +249,22 @@ const ui = {
                 if (color && color !== 'rgba(0, 0, 0, 0)') return color;
                 el = el.parentElement;
             }
-            return 'rgb(255, 255, 255)';
+            return 'rgb(255, 255, 255)'; // Default to white
         };
-
         let lastCheckedElement = null;
-        let contrastColor = '#2c282a'; // Default to dark text
 
         window.addEventListener('mousemove', e => {
             dom.kaomojiCursor.style.left = `${e.clientX}px`;
             dom.kaomojiCursor.style.top = `${e.clientY}px`;
-
+            
             const elem = document.elementFromPoint(e.clientX, e.clientY);
-            if (elem && elem !== lastCheckedElement) {
+            if(elem && elem !== lastCheckedElement) {
                 lastCheckedElement = elem;
                 const bgColor = getEffectiveBackgroundColor(elem);
                 const luminance = getLuminance(bgColor);
-                contrastColor = luminance > 0.4 ? '#2c282a' : '#f5f0f2'; // Dark on light, Light on dark
+                dom.kaomojiCursor.style.color = luminance > 0.5 ? '#2b2125' : '#f0e6e8';
             }
-            dom.kaomojiCursor.style.color = contrastColor;
         });
-
         document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; });
         document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; });
     },
@@ -201,21 +316,7 @@ const ui = {
         }
         if (this.activityChartInstance) this.activityChartInstance.destroy();
         const ctx = dom.activityChartCanvas.getContext('2d');
-        this.activityChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: buckets,
-                    backgroundColor: 'rgba(224, 108, 159, 0.8)', // Updated accent color
-                    borderWidth: 0,
-                    borderRadius: 2,
-                    barPercentage: 1.0,
-                    categoryPercentage: 1.0
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { display: true, beginAtZero: true, ticks: { color: 'rgba(168, 159, 162, 0.7)', precision: 0 }, grid: { color: 'rgba(168, 159, 162, 0.15)' }, title: { display: true, text: 'Visits', color: 'rgba(245, 240, 242, 0.8)' }, suggestedMax: Math.max(...buckets, 5) }, x: { display: true, ticks: { color: 'rgba(168, 159, 162, 0.7)', autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: false } } } }
-        });
+        this.activityChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ data: buckets, backgroundColor: 'rgba(211, 143, 186, 0.8)', borderWidth: 0, borderRadius: 2, barPercentage: 1.0, categoryPercentage: 1.0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { display: true, beginAtZero: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', precision: 0 }, grid: { color: 'rgba(240, 230, 232, 0.1)' }, title: { display: true, text: 'Visits', color: 'rgba(240, 230, 232, 0.7)' }, suggestedMax: Math.max(...buckets, 5) }, x: { display: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: false } } } } });
     },
 
     showVisitorMap(visitData) {
@@ -232,7 +333,7 @@ const ui = {
         const dataset = {};
         const counts = Object.values(countryData);
         const maxCount = Math.max(...counts, 1);
-        const palette = chroma.scale(['#e06c9f', '#f5f0f2']).domain([0, maxCount]); // Updated colors
+        const palette = chroma.scale(['#c979a8', '#f0e6e8']).domain([0, maxCount]);
         for (const [code2, count] of Object.entries(countryData)) {
             const code3 = countryCodeMap[code2];
             if (code3) {
@@ -241,18 +342,8 @@ const ui = {
             }
         }
         new Datamap({
-            element: dom.mapContainer,
-            projection: 'mercator',
-            fills: mapFills,
-            data: dataset,
-            geographyConfig: {
-                borderColor: '#2b2125',
-                highlightFillColor: '#d15c8f', // Use hover accent color
-                highlightBorderColor: 'rgba(0, 0, 0, 0.2)',
-                popupTemplate: (geo, data) =>
-                    `<div class="custom-hoverinfo"><div class="custom-hoverinfo-country">${geo.properties.name}</div><div class="custom-hoverinfo-data"><span>Visits</span><span class="custom-hoverinfo-count">${data ? data.visitCount.toLocaleString() : 0}</span></div></div>`
-
-            }
+            element: dom.mapContainer, projection: 'mercator', fills: mapFills, data: dataset,
+            geographyConfig: { borderColor: '#2b2125', highlightFillColor: '#d38fba', highlightBorderColor: 'rgba(0, 0, 0, 0.2)', popupTemplate: (geo, data) => `<div class="hoverinfo"><strong>${geo.properties.name}</strong><br>Visits: <span class="popup-visits-count">${data ? data.visitCount : 0}</span></div>` }
         });
     },
 
@@ -344,6 +435,7 @@ async function main() {
     bindEventListeners();
     initializeMusicPlayer();
     ui.renderProjects(config.PROJECTS);
+    physics.init(); // Initialize the bouncy balls!
     
     const [comments, visitData, activityData] = await Promise.all([
         api.fetchComments(),
