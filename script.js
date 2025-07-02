@@ -8,8 +8,8 @@
 // -------------------
 const config = {
     PROJECTS: [
-        { title: 'My Cool Game', description: 'A fun platformer game built with JavaScript.', image: './images/project-a-thumb.png', url: './my-cool-game/' },
-        { title: 'Another Project', description: 'This is another one of my awesome projects.', image: './images/placeholder.png', url: '#' }
+        { title: 'Notebook', description: 'A simple Notebook', image: './images/project-a-thumb.png', url: './notebook/' },
+        { title: 'Another Project', description: 'This is another project', image: './images/placeholder.png', url: '#' }
     ],
     API_ENDPOINTS: {
         comments: '/api/comments',

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notebook</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-paper">
+
+    <!-- Floating Formatting Toolbar (controlled by JS) -->
+    <div id="toolbar" class="toolbar">
+        <button data-command="bold">B</button>
+        <button data-command="italic">i</button>
+        <button data-command="formatBlock" data-value="h2">H2</button>
+        <button data-command="formatBlock" data-value="h3">H3</button>
+        <button data-command="formatBlock" data-value="blockquote">“</button>
+        <button data-command="insertHTML" data-value="<pre><code>Code...</code></pre>">{}</button>
+        <!-- Color pickers will be added here by JS -->
+    </div>
+
+    <main class="page-container">
+        <div id="editor" contenteditable="true" spellcheck="true"></div>
+    </main>
+
+    <footer class="page-footer">
+        <div class="controls">
+            <div class="control-group">
+                <button id="theme-btn" data-tooltip="Change Theme (Alt+T)">T</button>
+                <button id="focus-btn" class="active" data-tooltip="Toggle Focus Mode (Alt+F)">F</button>
+            </div>
+            <div class="control-group">
+                <button id="new-page-btn" data-tooltip="New Page (Alt+N)">N</button>
+                <button id="download-btn" data-tooltip="Download .txt (Alt+D)">D</button>
+            </div>
+            <div class="control-group">
+                <button id="power-tools-btn" data-tooltip="Power Tools (Alt+P)"></button>
+                <div id="power-tools-menu" class="power-tools-menu hidden">
+                    <button data-tool="removeNewlines">Remove Newlines</button>
+                    <button data-tool="toLowerCase">lowercase</button>
+                    <button data-tool="toUpperCase">UPPERCASE</button>
+                    <button data-tool="prettifyJson">Prettify JSON</button>
+                    <button data-tool="sortLines">Sort Lines</button>
+                </div>
+            </div>
+        </div>
+        <div class="stats">
+            <div>
+                <span id="word-count">0 words</span>
+                •
+                <span id="char-count">0 characters</span>
+            </div>
+            <div>
+                <span id="paragraph-count">0 paragraphs</span>
+                •
+                <span id="reading-time">~0 min read</span>
+            </div>
+            <div>
+                <span id="session-timer">Focus: 00:00</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
