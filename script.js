@@ -37,6 +37,7 @@ const dom = {
     closeModalButton: document.querySelector('#map-modal .close-button'),
     mapContainer: document.getElementById('map-container'),
     activityChartCanvas: document.getElementById('recent-activity-chart'),
+    cursorToggleBtn: document.getElementById('cursor-toggle-btn'), // New element
 };
 
 // -------------------
@@ -99,14 +100,13 @@ const ui = {
     setupKaomojiCursor() { if (!dom.kaomojiCursor) return; window.addEventListener('mousemove', e => { dom.kaomojiCursor.style.left = `${e.clientX}px`; dom.kaomojiCursor.style.top = `${e.clientY}px`; }); document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; }); document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; }); },
     renderProjects(projects) { if (!dom.projectGrid) return; dom.projectGrid.innerHTML = ''; projects.forEach(project => { const card = document.createElement('a'); card.href = project.url; card.className = 'project-card'; card.innerHTML = `<img src="${project.image}" alt="${project.title} thumbnail"><div class="project-card-content"><h3>${escapeHTML(project.title)}</h3><p>${escapeHTML(project.description)}</p></div>`; dom.projectGrid.appendChild(card); }); },
     renderComments(comments) { if (!dom.timeline || !dom.postsCountEl) return; dom.timeline.innerHTML = ''; if (comments.length === 0) { dom.timeline.innerHTML = '<p class="loading-message">No comments yet. Be the first!</p>'; } else { comments.forEach(c => { const el = document.createElement('div'); el.className = 'comment'; el.innerHTML = `<div class="comment-header"><span class="comment-user">${escapeHTML(c.username)}</span><span class="comment-time">${formatTimeAgo(c.timestamp)}</span></div><p class="comment-message">${escapeHTML(c.message)}</p>`; dom.timeline.appendChild(el); }); } dom.postsCountEl.textContent = comments.length.toLocaleString(); },
-        drawActivityChart(timestamps) {
+    drawActivityChart(timestamps) {
         if (!dom.activityChartCanvas) return;
         const now = Date.now();
-        const numBuckets = 30; // 30 minutes
-        const bucketSize = 60 * 1000; // 1 minute
+        const numBuckets = 30;
+        const bucketSize = 60 * 1000;
         const buckets = new Array(numBuckets).fill(0);
         
-        // FIX: Create meaningful labels for the X-axis
         const labels = new Array(numBuckets).fill('');
         labels[0] = '30m ago';
         labels[14] = '15m ago';
@@ -123,69 +123,26 @@ const ui = {
         if (this.activityChartInstance) this.activityChartInstance.destroy();
         const ctx = dom.activityChartCanvas.getContext('2d');
         this.activityChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: buckets,
-                    backgroundColor: 'rgba(211, 143, 186, 0.8)',
-                    borderWidth: 0,
-                    borderRadius: 2,
-                    barPercentage: 1.0,
-                    categoryPercentage: 1.0
-                }]
-            },
+            type: 'bar', data: { labels: labels, datasets: [{ data: buckets, backgroundColor: 'rgba(211, 143, 186, 0.8)', borderWidth: 0, borderRadius: 2, barPercentage: 1.0, categoryPercentage: 1.0 }] },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: true }
-                },
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: true } },
                 scales: {
-                    y: {
-                        display: true,
-                        beginAtZero: true,
-                        ticks: {
-                            color: 'rgba(240, 230, 232, 0.5)',
-                            precision: 0
-                        },
-                        grid: { color: 'rgba(240, 230, 232, 0.1)' },
-                        title: {
-                            display: true,
-                            text: 'Visits',
-                            color: 'rgba(240, 230, 232, 0.7)'
-                        },
-                        suggestedMax: Math.max(...buckets, 5)
-                    },
-                    x: {
-                        display: true,
-                        ticks: {
-                            color: 'rgba(240, 230, 232, 0.5)',
-                            autoSkip: false, // Ensure our 'Now', '15m', etc. labels are not skipped
-                            maxRotation: 0,
-                            minRotation: 0
-                        },
-                        grid: { display: false }
-                    }
+                    y: { display: true, beginAtZero: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', precision: 0 }, grid: { color: 'rgba(240, 230, 232, 0.1)' }, title: { display: true, text: 'Visits', color: 'rgba(240, 230, 232, 0.7)' }, suggestedMax: Math.max(...buckets, 5) },
+                    x: { display: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: false } }
                 }
             }
         });
     },
 
-    // ================== THIS FUNCTION IS THE CORE FIX ==================
     showVisitorMap(visitData) {
         if (!dom.mapModal || !dom.mapContainer) return;
-        document.body.classList.add('modal-open'); // Hide kaomoji cursor
+        document.body.classList.add('modal-open');
         dom.mapModal.classList.add('visible');
         dom.mapContainer.innerHTML = '';
         
         const countryData = visitData.countries || {};
-
-        if (Object.keys(countryData).length === 0) {
-            dom.mapContainer.innerHTML = '<p>No visitor data yet! Be the first.</p>';
-            return;
-        }
+        if (Object.keys(countryData).length === 0) { dom.mapContainer.innerHTML = '<p>No visitor data yet! Be the first.</p>'; return; }
         
         const mapFills = { defaultFill: '#3a2e33' };
         const dataset = {};
@@ -193,32 +150,23 @@ const ui = {
         const maxCount = Math.max(...counts, 1);
         const palette = chroma.scale(['#c979a8', '#f0e6e8']).domain([0, maxCount]);
 
-        // === FIX: MAPPING 2-LETTER TO 3-LETTER ISO CODES ===
         for (const [code2, count] of Object.entries(countryData)) {
-            const code3 = countryCodeMap[code2]; // Look up the 3-letter code
-            if (code3) { // Only add to dataset if we have a valid 3-letter code
+            const code3 = countryCodeMap[code2];
+            if (code3) {
                 mapFills[code3] = palette(count).hex();
                 dataset[code3] = { fillKey: code3, visitCount: count };
             }
         }
         
         new Datamap({
-            element: dom.mapContainer,
-            projection: 'mercator',
-            fills: mapFills,
-            data: dataset,
+            element: dom.mapContainer, projection: 'mercator', fills: mapFills, data: dataset,
             geographyConfig: {
-                borderColor: '#2b2125',
-                highlightFillColor: '#d38fba',
-                highlightBorderColor: 'rgba(0, 0, 0, 0.2)',
-                popupTemplate: (geo, data) =>
-                    // The key here, `visitCount`, must match the key in the `dataset` object above
-                    `<div class="hoverinfo"><strong>${geo.properties.name}</strong><br>Visits: ${data ? data.visitCount : 0}</div>`
+                borderColor: '#2b2125', highlightFillColor: '#d38fba', highlightBorderColor: 'rgba(0, 0, 0, 0.2)',
+                // FIX: Add a span with a class to the visit count number
+                popupTemplate: (geo, data) => `<div class="hoverinfo"><strong>${geo.properties.name}</strong><br>Visits: <span class="popup-visits-count">${data ? data.visitCount : 0}</span></div>`
             }
         });
     },
-    // ================================================================
-
     updateVisitCount(count) { if (dom.visitsCountEl) dom.visitsCountEl.textContent = count.toLocaleString(); }
 };
 
@@ -272,19 +220,47 @@ function bindEventListeners() {
         }
     });
 }
+function setupCursorToggle() {
+    if (!dom.cursorToggleBtn || !dom.kaomojiCursor) return;
+
+    const ALIGNMENT_KEY = 'cursorAlignment';
+    let currentAlignment = localStorage.getItem(ALIGNMENT_KEY) || 'center-mouth'; // Default to center
+
+    const applyAlignment = (alignment) => {
+        dom.kaomojiCursor.classList.remove('center-mouth', 'top-left');
+        dom.kaomojiCursor.classList.add(alignment);
+        localStorage.setItem(ALIGNMENT_KEY, alignment);
+    };
+
+    // Apply the saved or default alignment on page load
+    applyAlignment(currentAlignment);
+
+    dom.cursorToggleBtn.addEventListener('click', () => {
+        const newAlignment = dom.kaomojiCursor.classList.contains('center-mouth') ? 'top-left' : 'center-mouth';
+        applyAlignment(newAlignment);
+    });
+}
+
 async function main() {
     ui.setupKaomojiCursor();
+    setupCursorToggle(); // Set up the new toggle
     bindEventListeners();
     ui.renderProjects(config.PROJECTS);
+
     const [comments, visitData, activityData] = await Promise.all([api.fetchComments(), api.fetchVisitSummary(), api.fetchActivityData()]);
+    
     ui.renderComments(comments);
     ui.drawActivityChart(activityData);
     ui.updateVisitCount(visitData.total_visits);
+    
     if (!sessionStorage.getItem('visit_pinged')) {
         await api.pingVisit();
         const updatedVisitData = await api.fetchVisitSummary();
         ui.updateVisitCount(updatedVisitData.total_visits);
         sessionStorage.setItem('visit_pinged', 'true');
     }
+
     setInterval(() => api.fetchActivityData().then(ui.drawActivityChart), config.REFRESH_INTERVAL);
 }
+
+document.addEventListener('DOMContentLoaded', main);
