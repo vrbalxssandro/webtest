@@ -1,32 +1,29 @@
 export async function onRequest(context) {
-    // This function only responds to POST requests
     if (context.request.method !== "POST") {
         return new Response("Method not allowed", { status: 405 });
     }
 
-    // VISITORS_KV must be bound in the Cloudflare dashboard
     const { VISITORS_KV } = context.env;
-    if (!VISITORS_KV) {
-        return new Response("KV Namespace not bound", { status: 500 });
-    }
+    if (!VISITORS_KV) return new Response("KV Namespace not bound", { status: 500 });
     
-    // Get the two-letter country code from the Cloudflare request object
     const country = context.request.cf.country;
+    const now = new Date().toISOString();
 
-    // If for some reason there's no country, do nothing
-    if (!country) {
-        return new Response("No country data", { status: 200 });
+    const storedCountries = await VISITORS_KV.get("country_visits");
+    const storedTimestamps = await VISITORS_KV.get("recent_timestamps");
+
+    const countryData = storedCountries ? JSON.parse(storedCountries) : {};
+    const timestamps = storedTimestamps ? JSON.parse(storedTimestamps) : [];
+
+    if (country) {
+        countryData[country] = (countryData[country] || 0) + 1;
     }
 
-    // Get the current visitor data
-    const storedData = await VISITORS_KV.get("country_visits");
-    const visitData = storedData ? JSON.parse(storedData) : {};
+    timestamps.push(now);
+    const trimmedTimestamps = timestamps.slice(-200);
 
-    // Increment the count for the visitor's country
-    visitData[country] = (visitData[country] || 0) + 1;
-
-    // Save the updated data back to the KV store
-    await VISITORS_KV.put("country_visits", JSON.stringify(visitData));
+    await VISITORS_KV.put("country_visits", JSON.stringify(countryData));
+    await VISITORS_KV.put("recent_timestamps", JSON.stringify(trimmedTimestamps));
 
     return new Response("Visit logged", { status: 200 });
 }

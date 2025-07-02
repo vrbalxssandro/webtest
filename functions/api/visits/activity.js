@@ -8,17 +8,10 @@ export async function onRequest(context) {
         return new Response("KV Namespace not bound", { status: 500 });
     }
     
-    const storedData = await VISITORS_KV.get("country_visits");
-    const countryData = storedData ? JSON.parse(storedData) : {};
+    const storedTimestamps = await VISITORS_KV.get("recent_timestamps");
+    const timestamps = storedTimestamps ? JSON.parse(storedTimestamps) : [];
     
-    const totalVisits = Object.values(countryData).reduce((sum, count) => sum + count, 0);
-
-    const responsePayload = {
-        total_visits: totalVisits,
-        countries: countryData
-    };
-
-    return new Response(JSON.stringify(responsePayload), {
+    return new Response(JSON.stringify(timestamps), {
         headers: { 
             'Content-Type': 'application/json',
             'Cache-Control': 'public, max-age=60'
