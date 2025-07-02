@@ -16,15 +16,6 @@
     <script src="https://unpkg.com/wavesurfer.js"></script>
 </head>
 <body>
-    <!-- SVG filter for the high-contrast cursor -->
-    <svg style="position: absolute; width: 0; height: 0;">
-        <defs>
-            <filter id="invert-color-filter">
-                <feBlend in="SourceGraphic" in2="BackgroundImage" mode="difference" />
-            </filter>
-        </defs>
-    </svg>
-
     <div id="kaomoji-cursor">(´• ω •`)</div>
 
     <div class="container">
@@ -91,6 +82,13 @@
                 <div class="setting-row">
                     <span>Cursor Alignment</span>
                     <button id="cursor-toggle-btn">Toggle</button>
+                </div>
+                 <div class="setting-row">
+                    <span>Bring Balls to Front</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="z-index-toggle">
+                        <span class="slider"></span>
+                    </label>
                 </div>
                 <div class="setting-row">
                     <span>Ball Collisions</span>

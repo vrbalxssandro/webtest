@@ -50,7 +50,8 @@ const dom = {
     timeTotal: document.getElementById('time-total'),
     physicsContainer: document.getElementById('physics-container'),
     addBallBtn: document.getElementById('add-ball-btn'),
-    collisionToggle: document.getElementById('collision-toggle')
+    collisionToggle: document.getElementById('collision-toggle'),
+    zIndexToggle: document.getElementById('z-index-toggle')
 };
 
 // -------------------
@@ -111,9 +112,9 @@ const api = {
 // -------------------
 const physics = {
     balls: [],
-    gravity: 0.4,
+    gravity: 0.2,
     drag: 0.99,
-    bounceFactor: 0.92, // Increased for more bounciness
+    bounceFactor: 0.95,
     collisionsEnabled: true,
     mouse: { x: 0, y: 0, vx: 0, vy: 0, down: false },
     lastMousePos: { x: 0, y: 0 },
@@ -269,6 +270,12 @@ const physics = {
                 this.collisionsEnabled = e.target.checked;
             });
         }
+        
+        if (dom.zIndexToggle) {
+            dom.zIndexToggle.addEventListener('change', (e) => {
+                dom.physicsContainer.style.zIndex = e.target.checked ? '10000' : '5';
+            });
+        }
     },
     
     handleMouseDown(e, ball) {
@@ -291,9 +298,40 @@ const ui = {
     setupKaomojiCursor() {
         if (!dom.kaomojiCursor) return;
         
+        // Helper functions to calculate contrast for dynamic cursor color
+        const getLuminance = (color) => {
+            const rgb = color.match(/\d+/g);
+            if (!rgb) return 0;
+            const a = rgb.slice(0, 3).map(v => {
+                v = parseInt(v) / 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+        };
+
+        const getEffectiveBackgroundColor = (element) => {
+            let el = element;
+            while (el) {
+                const color = window.getComputedStyle(el).backgroundColor;
+                if (color && color !== 'rgba(0, 0, 0, 0)') return color;
+                el = el.parentElement;
+            }
+            return 'rgb(255, 255, 255)';
+        };
+
+        let lastCheckedElement = null;
+
         window.addEventListener('mousemove', e => {
             dom.kaomojiCursor.style.left = `${e.clientX}px`;
             dom.kaomojiCursor.style.top = `${e.clientY}px`;
+            
+            const elem = document.elementFromPoint(e.clientX, e.clientY);
+            if (elem && elem !== lastCheckedElement) {
+                lastCheckedElement = elem;
+                const bgColor = getEffectiveBackgroundColor(elem);
+                const luminance = getLuminance(bgColor);
+                dom.kaomojiCursor.style.color = luminance > 0.5 ? '#2b2125' : '#f0e6e8';
+            }
         });
         document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; });
         document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; });
@@ -372,8 +410,20 @@ const ui = {
             }
         }
         new Datamap({
-            element: dom.mapContainer, projection: 'mercator', fills: mapFills, data: dataset,
-            geographyConfig: { borderColor: '#2b2125', highlightFillColor: '#d38fba', highlightBorderColor: 'rgba(0, 0, 0, 0.2)', popupTemplate: (geo, data) => `<div class="hoverinfo"><strong>${geo.properties.name}</strong><br>Visits: <span class="popup-visits-count">${data ? data.visitCount : 0}</span></div>` }
+            element: dom.mapContainer, 
+            projection: 'mercator', 
+            fills: mapFills, 
+            data: dataset,
+            geographyConfig: { 
+                borderColor: '#2b2125', 
+                highlightFillColor: '#d38fba', 
+                highlightBorderColor: 'rgba(0, 0, 0, 0.2)', 
+                popupTemplate: (geo, data) => 
+                    `<div class="custom-hoverinfo">
+                        <div class="custom-hoverinfo-country">${geo.properties.name}</div>
+                        <div class="custom-hoverinfo-count">${data ? data.visitCount.toLocaleString() : '0'}</div>
+                    </div>`
+            }
         });
     },
 
