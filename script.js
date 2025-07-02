@@ -8,7 +8,7 @@
 // -------------------
 const config = {
     PROJECTS: [
-        { title: 'Notebook', description: 'A simple Notebook', image: './images/project-a-thumb.png', url: './notebook/' },
+        { title: 'Notebook', description: 'A simple Notebook', image: './images/notebook.png', url: './notebook/indedx.html' },
         { title: 'Another Project', description: 'This is another project', image: './images/placeholder.png', url: '#' }
     ],
     API_ENDPOINTS: {

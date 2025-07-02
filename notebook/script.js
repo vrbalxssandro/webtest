@@ -15,11 +15,11 @@ const sessionTimerEl = document.getElementById('session-timer');
 const body = document.body;
 
 // --- State & Config ---
-const LOCAL_STORAGE_KEY = 'notebook.content';
-const THEME_KEY = 'notebook.theme';
-const FOCUS_KEY = 'notebook.focus';
+const LOCAL_STORAGE_KEY = 'paper.content';
+const THEME_KEY = 'paper.theme';
+const FOCUS_KEY = 'paper.focus';
 const THEMES = ['theme-paper', 'theme-dusk', 'theme-blueprint'];
-const COLORS = { text: ['#212529', '#c2beb8', '#e56d6d', '#6da2e5', '#6de58e'], highlight: ['#cfe2ff', '#4a4446', '#e56d6d44', '#6da2e544', '#6de58e44'] };
+const COLORS = { text: ['#3a352f', '#c2beb8', '#e56d6d', '#6da2e5', '#6de58e'], highlight: ['#d9c8b3', '#4a4446', '#e56d6d44', '#6da2e544', '#6de58e44'] };
 let currentThemeIndex = 0;
 let isFocusMode = true;
 let sessionStartTime = Date.now();
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadState() {
     const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY);
-    editor.innerHTML = savedContent || `<h1>Welcome to Notebook</h1><p>Select text to see the formatting toolbar. Use Markdown-like shortcuts like ## or * to format as you type.</p>`;
+    editor.innerHTML = savedContent || `<h1>Welcome to Paper</h1><p>Select text to see the formatting toolbar. Use Markdown-like shortcuts like ## or * to format as you type.</p>`;
 
     const savedTheme = localStorage.getItem(THEME_KEY);
     currentThemeIndex = savedTheme ? THEMES.indexOf(savedTheme) : 0;
@@ -116,7 +116,6 @@ function execCommand(command, value = null) {
 function updateStats() {
     const text = editor.innerText;
     const charCount = text.length;
-    // Match words (sequences of non-space characters)
     const words = text.trim().match(/\s+/g);
     const wordCount = words ? words.length + 1 : (text.trim().length > 0 ? 1 : 0);
     const paragraphs = editor.querySelectorAll('p, h1, h2, h3, h4, h5, h6');
@@ -237,7 +236,7 @@ function setupEventListeners() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `notebook-export-${Date.now()}.txt`;
+        a.download = 'paper-export.txt';
         a.click();
         URL.revokeObjectURL(url);
     });
