@@ -22,7 +22,6 @@ body {
     padding: 20px;
 }
 
-/* === Kaomoji Cursor Styling === */
 body.modal-open #kaomoji-cursor {
     display: none;
 }
@@ -51,7 +50,6 @@ body.modal-open #kaomoji-cursor {
 .sidebar { display: flex; flex-direction: column; gap: 20px; }
 .card { background-color: var(--card-bg); padding: 20px; border-radius: 8px; }
 
-/* Stats Card */
 .stats-card { display: flex; gap: 20px; padding: 15px; }
 .stat-box { flex: 1; padding: 10px; border-radius: 6px; text-align: center; }
 #visits-box { border: 1px solid transparent; transition: border-color 0.2s; }
@@ -59,7 +57,6 @@ body.modal-open #kaomoji-cursor {
 .stat-box h2 { margin: 0 0 5px 0; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
 .stat-box p { margin: 0; font-size: 1.8rem; font-weight: bold; }
 
-/* Comment Section */
 .timeline-container h2 { margin: 0 0 15px 0; color: var(--text-secondary); font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
 .post-box { display: flex; flex-direction: column; gap: 10px; }
 .post-box input, .post-box textarea { background-color: var(--card-hover-bg); border: 1px solid #4a3c43; color: var(--text-color); padding: 12px; border-radius: 6px; font-family: inherit; font-size: 1rem; resize: vertical; }
@@ -71,31 +68,32 @@ body.modal-open #kaomoji-cursor {
 .comment-time { font-size: 0.85rem; color: var(--text-secondary); }
 .comment-message { margin: 0; line-height: 1.5; word-break: break-word; color: #dcd7da; }
 
-/* Other Widgets */
 .music-player-container h2, .card > h2 { font-weight: 700; font-size: 1.2rem; margin: 0 0 15px 0; }
 .music-player-container audio { width: 100%; color-scheme: light; }
 .chart-container { height: 150px; }
 
-/* Map Modal Styles */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-.modal-overlay.visible { opacity: 1; pointer-events: auto; }
-/* === NEW RULE: Restore default cursor within the modal === */
-.modal-overlay.visible {
-    cursor: default;
-}
+.modal-overlay.visible { opacity: 1; pointer-events: auto; cursor: default; }
 .modal-content { background: var(--card-bg); padding: 20px; border-radius: 8px; width: 90%; max-width: 900px; position: relative; }
-.close-button { position: absolute; top: 10px; right: 15px; background: none; border: none; color: var(--text-secondary); font-size: 2rem; cursor: pointer !important; /* Ensure close button is always a pointer */ }
+.close-button { position: absolute; top: 10px; right: 15px; background: none; border: none; color: var(--text-secondary); font-size: 2rem; cursor: pointer !important; }
 #map-container { height: 500px; }
 .datamap { position: relative; }
 
-/* === NEW RULE: Style the map's popup tooltip === */
+/* ================== MAP POPUP FIXES ================== */
 .datamaps-hoverover {
-    background: var(--text-color) !important;
-    color: var(--card-bg) !important;
+    /* Style */
+    background: var(--card-hover-bg) !important;
+    color: var(--text-color) !important;
     border: 1px solid var(--accent-color) !important;
-    border-radius: 4px !important;
-    padding: 6px 10px !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
     font-family: 'Roboto', sans-serif !important;
+    font-size: 0.9rem !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+
+    /* Behavior Fixes */
+    pointer-events: none !important; /* Prevents the popup from stealing mouse events */
+    transform: translate(15px, 10px) !important; /* Offsets the popup from the cursor */
 }
 
 @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } .projects-main { order: 1; } .sidebar { order: 2; } }

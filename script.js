@@ -102,17 +102,15 @@ const ui = {
         drawActivityChart(timestamps) {
         if (!dom.activityChartCanvas) return;
         const now = Date.now();
-        const numBuckets = 30;
-        const bucketSize = 60 * 1000;
+        const numBuckets = 30; // 30 minutes
+        const bucketSize = 60 * 1000; // 1 minute
         const buckets = new Array(numBuckets).fill(0);
-
-        // FIX: Create labels for the X-axis
-        const labels = Array(numBuckets).fill('').map((_, i) => {
-            if ((numBuckets - i - 1) % 5 === 0) { // Add a label every 5 minutes
-                return `${numBuckets - 1 - i}m ago`;
-            }
-            return '';
-        }).reverse();
+        
+        // FIX: Create meaningful labels for the X-axis
+        const labels = new Array(numBuckets).fill('');
+        labels[0] = '30m ago';
+        labels[14] = '15m ago';
+        labels[29] = 'Now';
 
         for (const ts of timestamps) {
             const timeAgo = now - new Date(ts).getTime();
@@ -132,7 +130,9 @@ const ui = {
                     data: buckets,
                     backgroundColor: 'rgba(211, 143, 186, 0.8)',
                     borderWidth: 0,
-                    borderRadius: 2
+                    borderRadius: 2,
+                    barPercentage: 1.0,
+                    categoryPercentage: 1.0
                 }]
             },
             options: {
@@ -140,31 +140,33 @@ const ui = {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { enabled: true } // Enable tooltips on hover
+                    tooltip: { enabled: true }
                 },
                 scales: {
-                    // FIX: Display the Y-axis with suggested steps
                     y: {
                         display: true,
                         beginAtZero: true,
                         ticks: {
                             color: 'rgba(240, 230, 232, 0.5)',
-                            precision: 0 // Only show whole numbers
+                            precision: 0
                         },
-                        grid: {
-                           color: 'rgba(240, 230, 232, 0.1)'
+                        grid: { color: 'rgba(240, 230, 232, 0.1)' },
+                        title: {
+                            display: true,
+                            text: 'Visits',
+                            color: 'rgba(240, 230, 232, 0.7)'
                         },
                         suggestedMax: Math.max(...buckets, 5)
                     },
-                    // FIX: Display the X-axis
                     x: {
                         display: true,
                         ticks: {
-                            color: 'rgba(240, 230, 232, 0.5)'
+                            color: 'rgba(240, 230, 232, 0.5)',
+                            autoSkip: false, // Ensure our 'Now', '15m', etc. labels are not skipped
+                            maxRotation: 0,
+                            minRotation: 0
                         },
-                        grid: {
-                           display: false // Keep X-axis grid lines hidden
-                        }
+                        grid: { display: false }
                     }
                 }
             }
