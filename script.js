@@ -48,9 +48,9 @@ const dom = {
     trackTitle: document.getElementById('track-title'),
     timeCurrent: document.getElementById('time-current'),
     timeTotal: document.getElementById('time-total'),
-    // New elements for physics balls
     physicsContainer: document.getElementById('physics-container'),
-    addBallBtn: document.getElementById('add-ball-btn')
+    addBallBtn: document.getElementById('add-ball-btn'),
+    collisionToggle: document.getElementById('collision-toggle')
 };
 
 // -------------------
@@ -111,21 +111,22 @@ const api = {
 // -------------------
 const physics = {
     balls: [],
-    gravity: 0.6,
-    drag: 0.999,
-    bounceFactor: 0.85,
+    gravity: 0.4,
+    drag: 0.99,
+    bounceFactor: 0.92, // Increased for more bounciness
+    collisionsEnabled: true,
     mouse: { x: 0, y: 0, vx: 0, vy: 0, down: false },
     lastMousePos: { x: 0, y: 0 },
     
     init() {
         this.addEventListeners();
-        this.createBall(); // Start with one ball
-        this.createBall(); // And another one
+        this.createBall();
+        this.createBall();
         this.animate();
     },
 
     createBall(x, y) {
-        const radius = Math.random() * 20 + 25; // Size between 25px and 45px
+        const radius = Math.random() * 20 + 25;
         const ball = {
             el: document.createElement('div'),
             radius: radius,
@@ -149,36 +150,88 @@ const physics = {
     },
     
     animate() {
+        if (this.collisionsEnabled) {
+            this.handleCollisions();
+        }
+
         this.balls.forEach(ball => {
             if (!ball.isDragging) {
-                // Apply physics
                 ball.vx *= this.drag;
                 ball.vy *= this.drag;
                 ball.vy += this.gravity;
                 ball.x += ball.vx;
                 ball.y += ball.vy;
-
-                // Wall collisions
-                if (ball.x + ball.radius > window.innerWidth) {
-                    ball.x = window.innerWidth - ball.radius;
-                    ball.vx *= -this.bounceFactor;
-                } else if (ball.x - ball.radius < 0) {
-                    ball.x = ball.radius;
-                    ball.vx *= -this.bounceFactor;
-                }
-                if (ball.y + ball.radius > window.innerHeight) {
-                    ball.y = window.innerHeight - ball.radius;
-                    ball.vy *= -this.bounceFactor;
-                } else if (ball.y - ball.radius < 0) {
-                    ball.y = ball.radius;
-                    ball.vy *= -this.bounceFactor;
-                }
+                this.handleWallCollisions(ball);
             }
 
             ball.el.style.transform = `translate3d(${ball.x - ball.radius}px, ${ball.y - ball.radius}px, 0)`;
         });
 
         requestAnimationFrame(() => this.animate());
+    },
+
+    handleWallCollisions(ball) {
+        if (ball.x + ball.radius > window.innerWidth) {
+            ball.x = window.innerWidth - ball.radius;
+            ball.vx *= -this.bounceFactor;
+        } else if (ball.x - ball.radius < 0) {
+            ball.x = ball.radius;
+            ball.vx *= -this.bounceFactor;
+        }
+        if (ball.y + ball.radius > window.innerHeight) {
+            ball.y = window.innerHeight - ball.radius;
+            ball.vy *= -this.bounceFactor;
+        } else if (ball.y - ball.radius < 0) {
+            ball.y = ball.radius;
+            ball.vy *= -this.bounceFactor;
+        }
+    },
+    
+    handleCollisions() {
+        for (let i = 0; i < this.balls.length; i++) {
+            for (let j = i + 1; j < this.balls.length; j++) {
+                const ball1 = this.balls[i];
+                const ball2 = this.balls[j];
+                
+                const dx = ball2.x - ball1.x;
+                const dy = ball2.y - ball1.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const minDistance = ball1.radius + ball2.radius;
+
+                if (distance < minDistance) {
+                    this.resolveCollision(ball1, ball2, dx, dy, distance, minDistance);
+                }
+            }
+        }
+    },
+    
+    resolveCollision(ball1, ball2, dx, dy, distance, minDistance) {
+        // Resolve overlap
+        const overlap = minDistance - distance;
+        const nx = dx / distance;
+        const ny = dy / distance;
+        ball1.x -= nx * overlap * 0.5;
+        ball1.y -= ny * overlap * 0.5;
+        ball2.x += nx * overlap * 0.5;
+        ball2.y += ny * overlap * 0.5;
+
+        // Elastic collision response
+        const tx = -ny;
+        const ty = nx;
+        
+        const dpTan1 = ball1.vx * tx + ball1.vy * ty;
+        const dpTan2 = ball2.vx * tx + ball2.vy * ty;
+        
+        const dpNorm1 = ball1.vx * nx + ball1.vy * ny;
+        const dpNorm2 = ball2.vx * nx + ball2.vy * ny;
+
+        const m1 = dpNorm2;
+        const m2 = dpNorm1;
+        
+        ball1.vx = tx * dpTan1 + nx * m1;
+        ball1.vy = ty * dpTan1 + ny * m1;
+        ball2.vx = tx * dpTan2 + nx * m2;
+        ball2.vy = ty * dpTan2 + ny * m2;
     },
 
     addEventListeners() {
@@ -210,6 +263,12 @@ const physics = {
                 this.createBall(window.innerWidth / 2, window.innerHeight / 2);
             });
         }
+        
+        if (dom.collisionToggle) {
+            dom.collisionToggle.addEventListener('change', (e) => {
+                this.collisionsEnabled = e.target.checked;
+            });
+        }
     },
     
     handleMouseDown(e, ball) {
@@ -232,38 +291,9 @@ const ui = {
     setupKaomojiCursor() {
         if (!dom.kaomojiCursor) return;
         
-        // This logic makes the cursor color change based on the background.
-        const getLuminance = (color) => {
-            const rgb = color.match(/\d+/g);
-            if (!rgb) return 0;
-            const a = rgb.slice(0, 3).map(v => {
-                v = parseInt(v) / 255;
-                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-            });
-            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
-        };
-        const getEffectiveBackgroundColor = (element) => {
-            let el = element;
-            while (el) {
-                const color = window.getComputedStyle(el).backgroundColor;
-                if (color && color !== 'rgba(0, 0, 0, 0)') return color;
-                el = el.parentElement;
-            }
-            return 'rgb(255, 255, 255)'; // Default to white
-        };
-        let lastCheckedElement = null;
-
         window.addEventListener('mousemove', e => {
             dom.kaomojiCursor.style.left = `${e.clientX}px`;
             dom.kaomojiCursor.style.top = `${e.clientY}px`;
-            
-            const elem = document.elementFromPoint(e.clientX, e.clientY);
-            if(elem && elem !== lastCheckedElement) {
-                lastCheckedElement = elem;
-                const bgColor = getEffectiveBackgroundColor(elem);
-                const luminance = getLuminance(bgColor);
-                dom.kaomojiCursor.style.color = luminance > 0.5 ? '#2b2125' : '#f0e6e8';
-            }
         });
         document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; });
         document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; });
@@ -435,7 +465,7 @@ async function main() {
     bindEventListeners();
     initializeMusicPlayer();
     ui.renderProjects(config.PROJECTS);
-    physics.init(); // Initialize the bouncy balls!
+    physics.init();
     
     const [comments, visitData, activityData] = await Promise.all([
         api.fetchComments(),

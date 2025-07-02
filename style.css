@@ -45,14 +45,16 @@ body.modal-open #kaomoji-cursor {
     pointer-events: none;
     font-size: 20px;
     z-index: 9999;
-    color: var(--text-color);
-    text-shadow: 0 0 5px var(--card-bg);
-    transition: color 0.3s ease;
+    color: white; /* Base color for the filter to work on */
+    filter: url(#invert-color-filter);
+    text-shadow: none; /* Shadow can interfere with filter */
 }
 #kaomoji-cursor.top-left { transform: translate(5px, 5px); }
 #kaomoji-cursor.center-mouth { transform: translate(-50%, -50%); }
 
 .container { 
+    position: relative;
+    z-index: 10;
     display: grid; 
     grid-template-columns: 2.5fr 1fr; 
     gap: 20px; 
@@ -122,9 +124,12 @@ body.modal-open #kaomoji-cursor {
 .card > h2 { font-weight: 700; font-size: 1.2rem; margin: 0 0 15px 0; }
 .chart-container { height: 150px; }
 
-.settings-card { display: flex; flex-direction: column; gap: 10px; }
-.settings-card button { width: 100%; background-color: var(--card-hover-bg); border: 1px solid #4a3c43; color: var(--text-color); padding: 10px; border-radius: 6px; font-size: 0.9rem; transition: background-color 0.2s, border-color 0.2s, transform 0.2s; }
+.settings-card { display: flex; flex-direction: column; gap: 15px; }
+.setting-row { display: flex; justify-content: space-between; align-items: center; }
+.setting-row span { color: var(--text-secondary); font-size: 0.9rem; }
+.settings-card button { width: auto; background-color: var(--card-hover-bg); border: 1px solid #4a3c43; color: var(--text-color); padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; transition: background-color 0.2s, border-color 0.2s, transform 0.2s; }
 .settings-card button:hover { background-color: #4a3c43; border-color: var(--accent-color); transform: scale(1.03); }
+#add-ball-btn { width: 100%; margin-top: 5px; }
 
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
 .modal-overlay.visible { opacity: 1; pointer-events: auto; cursor: default; }
@@ -161,7 +166,7 @@ body.modal-open #kaomoji-cursor {
     width: 100vw;
     height: 100vh;
     pointer-events: none; /* Allows clicks to pass through */
-    z-index: 9998;
+    z-index: 5;
 }
 
 .bouncy-ball {
@@ -177,6 +182,48 @@ body.modal-open #kaomoji-cursor {
     cursor: grabbing;
     transform: scale(1.1);
     z-index: 10000;
+}
+
+/* --- Settings Toggle Switch --- */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--card-hover-bg);
+    transition: .4s;
+    border-radius: 28px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: var(--text-secondary);
+    transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .slider {
+    background-color: var(--accent-color);
+}
+input:checked + .slider:before {
+    transform: translateX(22px);
+    background-color: white;
 }
 
 
