@@ -1,29 +1,26 @@
-/**
- * oneko.js: https://github.com/adryd325/oneko.js
- * 
- * Implements a cute cat that chases the mouse cursor.
- * 
- * This is the 'oneko.js' version, which is a standalone script
- * with no dependencies.
- */
+// oneko.js: https://github.com/adryd325/oneko.js
+
 (function oneko() {
   const isReducedMotion =
     window.matchMedia(`(prefers-reduced-motion: reduce)`) === true ||
     window.matchMedia(`(prefers-reduced-motion: reduce)`).matches === true;
 
-  if (isReducedMotion) {
-    return;
-  }
+  if (isReducedMotion) return;
 
-  const cat = document.createElement("div");
-  let catPosition = { x: 0, y: 0 };
-  let mousePosition = { x: 0, y: 0 };
-  let frame = 0;
+  const nekoEl = document.createElement("div");
+
+  let nekoPosX = 32;
+  let nekoPosY = 32;
+
+  let mousePosX = 0;
+  let mousePosY = 0;
+
+  let frameCount = 0;
   let idleTime = 0;
   let idleAnimation = null;
   let idleAnimationFrame = 0;
 
-  const nekoSpeed = 15;
+  const nekoSpeed = 10;
   const spriteSets = {
     idle: [[-3, -3]],
     alert: [[-7, -3]],
@@ -32,12 +29,24 @@
       [-6, 0],
       [-7, 0],
     ],
-    scratchWall: [
+    scratchWallN: [
       [0, 0],
       [0, -1],
     ],
-    sit: [[-2, -3]],
-    sleep: [
+    scratchWallS: [
+      [-7, -1],
+      [-6, -2],
+    ],
+    scratchWallE: [
+      [-2, -2],
+      [-2, -3],
+    ],
+    scratchWallW: [
+      [-4, 0],
+      [-4, -1],
+    ],
+    tired: [[-3, -2]],
+    sleeping: [
       [-2, 0],
       [-2, -1],
     ],
@@ -50,58 +59,80 @@
       [0, -3],
     ],
     E: [
-      [-3, -2],
-      [-3, -3],
+      [-3, 0],
+      [-3, -1],
     ],
     SE: [
-      [-2, -2],
-      [-2, -3],
+      [-5, -1],
+      [-5, -2],
     ],
     S: [
+      [-6, -3],
+      [-7, -2],
+    ],
+    SW: [
+      [-5, -3],
+      [-6, -1],
+    ],
+    W: [
       [-4, -2],
       [-4, -3],
     ],
-    SW: [
-      [-5, -2],
-      [-5, -3],
-    ],
-    W: [
-      [-6, -2],
-      [-6, -3],
-    ],
     NW: [
-      [-7, -2],
-      [-7, -3],
+      [-1, 0],
+      [-1, -1],
     ],
   };
 
-  function create() {
-    cat.id = "oneko";
-    cat.style.width = "32px";
-    cat.style.height = "32px";
-    cat.style.position = "fixed";
-    cat.style.backgroundImage = "url('https://cdn.adryd.com/oneko/oneko.gif')";
-    cat.style.imageRendering = "pixelated";
-    cat.style.left = "16px";
-    cat.style.top = "16px";
-    cat.style.zIndex = Number.MAX_VALUE;
+  function init() {
+    nekoEl.id = "oneko";
+    nekoEl.ariaHidden = true;
+    nekoEl.style.width = "32px";
+    nekoEl.style.height = "32px";
+    nekoEl.style.position = "fixed";
+    nekoEl.style.pointerEvents = "none";
+    nekoEl.style.imageRendering = "pixelated";
+    nekoEl.style.left = `${nekoPosX - 16}px`;
+    nekoEl.style.top = `${nekoPosY - 16}px`;
+    nekoEl.style.zIndex = 2147483647;
 
-    document.body.appendChild(cat);
+    let nekoFile = "./images/oneko.gif"
+    const curScript = document.currentScript
+    if (curScript && curScript.dataset.cat) {
+      nekoFile = curScript.dataset.cat
+    }
+    nekoEl.style.backgroundImage = `url(${nekoFile})`;
 
-    catPosition.x = 16;
-    catPosition.y = 16;
+    document.body.appendChild(nekoEl);
 
-    document.onmousemove = (event) => {
-      mousePosition.x = event.clientX;
-      mousePosition.y = event.clientY;
-    };
+    document.addEventListener("mousemove", function (event) {
+      mousePosX = event.clientX;
+      mousePosY = event.clientY;
+    });
 
+    window.requestAnimationFrame(onAnimationFrame);
+  }
+
+  let lastFrameTimestamp;
+
+  function onAnimationFrame(timestamp) {
+    // Stops execution if the neko element is removed from DOM
+    if (!nekoEl.isConnected) {
+      return;
+    }
+    if (!lastFrameTimestamp) {
+      lastFrameTimestamp = timestamp;
+    }
+    if (timestamp - lastFrameTimestamp > 100) {
+      lastFrameTimestamp = timestamp
+      frame()
+    }
     window.requestAnimationFrame(onAnimationFrame);
   }
 
   function setSprite(name, frame) {
     const sprite = spriteSets[name][frame % spriteSets[name].length];
-    cat.style.backgroundPosition = `${sprite[0] * 32}px ${sprite[1] * 32}px`;
+    nekoEl.style.backgroundPosition = `${sprite[0] * 32}px ${sprite[1] * 32}px`;
   }
 
   function resetIdleAnimation() {
@@ -112,135 +143,97 @@
   function idle() {
     idleTime += 1;
 
+    // every ~ 20 seconds
     if (
       idleTime > 10 &&
-      Math.random() < 0.005 &&
+      Math.floor(Math.random() * 200) == 0 &&
       idleAnimation == null
     ) {
-      const availableIdleAnimations = ["scratchSelf", "scratchWall"];
-      if (catPosition.x < 32) {
-        availableIdleAnimations.push("scratchWall");
+      let avalibleIdleAnimations = ["sleeping", "scratchSelf"];
+      if (nekoPosX < 32) {
+        avalibleIdleAnimations.push("scratchWallW");
+      }
+      if (nekoPosY < 32) {
+        avalibleIdleAnimations.push("scratchWallN");
+      }
+      if (nekoPosX > window.innerWidth - 32) {
+        avalibleIdleAnimations.push("scratchWallE");
+      }
+      if (nekoPosY > window.innerHeight - 32) {
+        avalibleIdleAnimations.push("scratchWallS");
       }
       idleAnimation =
-        availableIdleAnimations[
-          Math.floor(Math.random() * availableIdleAnimations.length)
+        avalibleIdleAnimations[
+          Math.floor(Math.random() * avalibleIdleAnimations.length)
         ];
     }
 
     switch (idleAnimation) {
-      case "scratchSelf":
-        idleAnimationFrame += 1;
-        if (idleAnimationFrame < 10) {
-          setSprite("alert", 0);
-          return;
+      case "sleeping":
+        if (idleAnimationFrame < 8) {
+          setSprite("tired", 0);
+          break;
         }
-        if (idleAnimationFrame < 25) {
-          setSprite("scratchSelf", 0);
-          return;
-        }
-        if (idleAnimationFrame < 40) {
-          setSprite("scratchSelf", 1);
-          return;
-        }
-        if (idleAnimationFrame < 55) {
-          setSprite("scratchSelf", 2);
-          return;
-        }
-        setSprite("sit", 0);
-        if (idleAnimationFrame > 100) {
+        setSprite("sleeping", Math.floor(idleAnimationFrame / 4));
+        if (idleAnimationFrame > 192) {
           resetIdleAnimation();
         }
         break;
-      case "scratchWall":
-        idleAnimationFrame += 1;
-        if (idleAnimationFrame < 10) {
-          setSprite("alert", 0);
-          return;
-        }
-        if (idleAnimationFrame < 25) {
-          setSprite("scratchWall", 0);
-          return;
-        }
-        if (idleAnimationFrame < 40) {
-          setSprite("scratchWall", 1);
-          return;
-        }
-        setSprite("sit", 0);
-        if (idleAnimationFrame > 100) {
+      case "scratchWallN":
+      case "scratchWallS":
+      case "scratchWallE":
+      case "scratchWallW":
+      case "scratchSelf":
+        setSprite(idleAnimation, idleAnimationFrame);
+        if (idleAnimationFrame > 9) {
           resetIdleAnimation();
         }
         break;
       default:
-        setSprite("sit", 0);
-        if (idleTime > 200) {
-          setSprite("sleep", Math.floor(frame / 20));
-        }
-        break;
+        setSprite("idle", 0);
+        return;
     }
+    idleAnimationFrame += 1;
   }
 
-  function onAnimationFrame() {
-    frame += 1;
-    const diffX = catPosition.x - mousePosition.x;
-    const diffY = catPosition.y - mousePosition.y;
+  function frame() {
+    frameCount += 1;
+    const diffX = nekoPosX - mousePosX;
+    const diffY = nekoPosY - mousePosY;
     const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
 
-    if (distance < 30 || distance > 2000) {
+    if (distance < nekoSpeed || distance < 48) {
       idle();
-      window.requestAnimationFrame(onAnimationFrame);
       return;
     }
 
-    idleTime = 0;
-    resetIdleAnimation();
+    idleAnimation = null;
+    idleAnimationFrame = 0;
 
-    let newCatPosition = { x: catPosition.x, y: catPosition.y };
-    if (diffX) {
-      newCatPosition.x -= (diffX / distance) * nekoSpeed;
-    }
-    if (diffY) {
-      newCatPosition.y -= (diffY / distance) * nekoSpeed;
-    }
-
-    // check if cat can move to new position
-    if (
-      document
-        .elementsFromPoint(newCatPosition.x, newCatPosition.y)
-        .filter((e) => e.id !== "oneko").length > 0
-    ) {
-      catPosition.x = newCatPosition.x;
-      catPosition.y = newCatPosition.y;
+    if (idleTime > 1) {
+      setSprite("alert", 0);
+      // count down after being alerted before moving
+      idleTime = Math.min(idleTime, 7);
+      idleTime -= 1;
+      return;
     }
 
-    cat.style.left = `${catPosition.x - 16}px`;
-    cat.style.top = `${catPosition.y - 16}px`;
+    let direction;
+    direction = diffY / distance > 0.5 ? "N" : "";
+    direction += diffY / distance < -0.5 ? "S" : "";
+    direction += diffX / distance > 0.5 ? "W" : "";
+    direction += diffX / distance < -0.5 ? "E" : "";
+    setSprite(direction, frameCount);
 
-    const direction =
-      diffY > 0
-        ? diffX > 0
-          ? "NW"
-          : "NE"
-        : diffX > 0
-        ? "SW"
-        : "SE";
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-      if (diffX > 0) {
-        setSprite("W", Math.floor(frame / 5));
-      } else {
-        setSprite("E", Math.floor(frame / 5));
-      }
-    } else if (Math.abs(diffY) > Math.abs(diffX)) {
-      if (diffY > 0) {
-        setSprite("N", Math.floor(frame / 5));
-      } else {
-        setSprite("S", Math.floor(frame / 5));
-      }
-    } else {
-      setSprite(direction, Math.floor(frame / 5));
-    }
+    nekoPosX -= (diffX / distance) * nekoSpeed;
+    nekoPosY -= (diffY / distance) * nekoSpeed;
 
-    window.requestAnimationFrame(onAnimationFrame);
+    nekoPosX = Math.min(Math.max(16, nekoPosX), window.innerWidth - 16);
+    nekoPosY = Math.min(Math.max(16, nekoPosY), window.innerHeight - 16);
+
+    nekoEl.style.left = `${nekoPosX - 16}px`;
+    nekoEl.style.top = `${nekoPosY - 16}px`;
   }
 
-  create();
+  init();
 })();
