@@ -4,10 +4,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // =======================================================
     const PROJECTS = [
         {
-            title: 'Test project',
+            title: 'My Cool Game',
             description: 'A fun platformer game built with JavaScript and HTML5 Canvas.',
             image: './images/project-a-thumb.png', // Path to your thumbnail image
-            url: './test-project/'               // Path to the project's subfolder
+            url: './my-cool-game/'               // Path to the project's subfolder
         },
         {
             title: 'Another Project',
@@ -66,10 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function postComment() {
         const username = usernameInput.value.trim() || 'Anonymous';
         const message = commentInput.value.trim();
-        if (!message) {
-            alert('Please enter a message.');
-            return;
-        }
+        if (!message) return alert('Please enter a message.');
 
         postButton.disabled = true;
         postButton.textContent = 'Posting...';
@@ -93,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ================== THIS FUNCTION IS UPDATED ==================
     const renderComments = (comments) => {
         if (!timeline) return;
         timeline.innerHTML = '';
@@ -102,12 +100,15 @@ document.addEventListener('DOMContentLoaded', () => {
             comments.forEach(comment => {
                 const commentElement = document.createElement('div');
                 commentElement.className = 'comment';
+                
+                // Create the new structure matching the screenshot
                 commentElement.innerHTML = `
                     <div class="comment-header">
                         <span class="comment-user">${escapeHTML(comment.username)}</span>
                         <span class="comment-time">${formatTimeAgo(comment.timestamp)}</span>
                     </div>
-                    <p class="comment-message">${escapeHTML(comment.message)}</p>`;
+                    <p class="comment-message">${escapeHTML(comment.message)}</p>
+                `;
                 timeline.appendChild(commentElement);
             });
         }
@@ -115,6 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             postsCountEl.textContent = comments.length.toLocaleString();
         }
     };
+    // ===============================================================
 
     function updateVisitCount() {
         let visits = Number(localStorage.getItem('siteVisits')) || 0;
