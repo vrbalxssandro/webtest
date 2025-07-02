@@ -1,11 +1,6 @@
 /**
  * Main script for the interactive homepage.
  * This script is structured into modules for clarity and maintainability.
- * - config: Static configuration data.
- * - dom: References to DOM elements.
- * - api: Functions for fetching data from the backend.
- * - ui: Functions for updating the user interface.
- * - main: The entry point that orchestrates everything.
  */
 
 // -------------------
@@ -50,7 +45,10 @@ const dom = {
 const api = {
     async pingVisit() {
         try {
-            await fetch(config.API_ENDPOINTS.pingVisit, { method: 'POST' });
+            const response = await fetch(config.API_ENDPOINTS.pingVisit, { method: 'POST' });
+            if (!response.ok) { // Check if the server responded with an error
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
         } catch (error) {
             console.error("Could not ping visit:", error);
         }
@@ -62,7 +60,7 @@ const api = {
             return await response.json();
         } catch (error) {
             console.error("Could not fetch total visits:", error);
-            return { total_visits: 0, countries: {} }; // Return a default object on failure
+            return { total_visits: 0, countries: {} };
         }
     },
     async fetchActivityData() {
@@ -101,88 +99,11 @@ const api = {
 // -------------------
 const ui = {
     activityChartInstance: null,
-
-    setupKaomojiCursor() {
-        if (!dom.kaomojiCursor) return;
-        window.addEventListener('mousemove', e => {
-            dom.kaomojiCursor.style.left = `${e.clientX}px`;
-            dom.kaomojiCursor.style.top = `${e.clientY}px`;
-        });
-        document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; });
-        document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; });
-    },
-
-    renderProjects(projects) {
-        if (!dom.projectGrid) return;
-        dom.projectGrid.innerHTML = '';
-        projects.forEach(project => {
-            const card = document.createElement('a');
-            card.href = project.url;
-            card.className = 'project-card';
-            card.innerHTML = `<img src="${project.image}" alt="${project.title} thumbnail"><div class="project-card-content"><h3>${escapeHTML(project.title)}</h3><p>${escapeHTML(project.description)}</p></div>`;
-            dom.projectGrid.appendChild(card);
-        });
-    },
-
-    renderComments(comments) {
-        if (!dom.timeline || !dom.postsCountEl) return;
-        dom.timeline.innerHTML = '';
-        if (comments.length === 0) {
-            dom.timeline.innerHTML = '<p class="loading-message">No comments yet. Be the first!</p>';
-        } else {
-            comments.forEach(c => {
-                const el = document.createElement('div');
-                el.className = 'comment';
-                el.innerHTML = `<div class="comment-header"><span class="comment-user">${escapeHTML(c.username)}</span><span class="comment-time">${formatTimeAgo(c.timestamp)}</span></div><p class="comment-message">${escapeHTML(c.message)}</p>`;
-                dom.timeline.appendChild(el);
-            });
-        }
-        dom.postsCountEl.textContent = comments.length.toLocaleString();
-    },
-
-    drawActivityChart(timestamps) {
-        if (!dom.activityChartCanvas) return;
-        const now = Date.now();
-        const numBuckets = 30;
-        const bucketSize = 60 * 1000;
-        const buckets = new Array(numBuckets).fill(0);
-        const labels = new Array(numBuckets).fill('');
-
-        for (const ts of timestamps) {
-            const timeAgo = now - new Date(ts).getTime();
-            if (timeAgo >= 0 && timeAgo < numBuckets * bucketSize) {
-                const bucketIndex = Math.floor(timeAgo / bucketSize);
-                buckets[numBuckets - 1 - bucketIndex]++;
-            }
-        }
-        
-        if (this.activityChartInstance) this.activityChartInstance.destroy();
-        const ctx = dom.activityChartCanvas.getContext('2d');
-        this.activityChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ data: buckets, backgroundColor: 'rgba(211, 143, 186, 0.8)', borderWidth: 0, borderRadius: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { y: { display: false, beginAtZero: true, suggestedMax: Math.max(...buckets, 5) }, x: { display: false } } } });
-    },
-
-    showVisitorMap(visitData) {
-        if (!dom.mapModal || !dom.mapContainer) return;
-        dom.mapModal.classList.add('visible');
-        dom.mapContainer.innerHTML = ''; // Clear previous map
-        const countryData = visitData.countries || {};
-
-        if (Object.keys(countryData).length === 0) {
-            dom.mapContainer.innerHTML = '<p>No visitor data yet! Be the first.</p>';
-            return;
-        }
-        
-        const mapFills = { defaultFill: '#3a2e33' };
-        const dataset = {};
-        const counts = Object.values(countryData);
-        const maxCount = Math.max(...counts, 1);
-        const palette = chroma.scale(['#c979a8', '#f0e6e8']).domain([0, maxCount]);
-        for (const [countryCode, count] of Object.entries(countryData)) {
-            mapFills[countryCode] = palette(count).hex();
-            dataset[countryCode] = { fillKey: countryCode, visitCount: count };
-        }
-        new Datamap({ element: dom.mapContainer, projection: 'mercator', fills: mapFills, data: dataset, geographyConfig: { borderColor: '#2b2125', highlightFillColor: '#d38fba', highlightBorderColor: 'rgba(0, 0, 0, 0.2)', popupTemplate: (geo, data) => `<div class="hoverinfo"><strong>${geo.properties.name}</strong><br>Visits: ${data ? data.visitCount : 0}</div>` } });
-    },
+    setupKaomojiCursor() { if (!dom.kaomojiCursor) return; window.addEventListener('mousemove', e => { dom.kaomojiCursor.style.left = `${e.clientX}px`; dom.kaomojiCursor.style.top = `${e.clientY}px`; }); document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; }); document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; }); },
+    renderProjects(projects) { if (!dom.projectGrid) return; dom.projectGrid.innerHTML = ''; projects.forEach(project => { const card = document.createElement('a'); card.href = project.url; card.className = 'project-card'; card.innerHTML = `<img src="${project.image}" alt="${project.title} thumbnail"><div class="project-card-content"><h3>${escapeHTML(project.title)}</h3><p>${escapeHTML(project.description)}</p></div>`; dom.projectGrid.appendChild(card); }); },
+    renderComments(comments) { if (!dom.timeline || !dom.postsCountEl) return; dom.timeline.innerHTML = ''; if (comments.length === 0) { dom.timeline.innerHTML = '<p class="loading-message">No comments yet. Be the first!</p>'; } else { comments.forEach(c => { const el = document.createElement('div'); el.className = 'comment'; el.innerHTML = `<div class="comment-header"><span class="comment-user">${escapeHTML(c.username)}</span><span class="comment-time">${formatTimeAgo(c.timestamp)}</span></div><p class="comment-message">${escapeHTML(c.message)}</p>`; dom.timeline.appendChild(el); }); } dom.postsCountEl.textContent = comments.length.toLocaleString(); },
+    drawActivityChart(timestamps) { if (!dom.activityChartCanvas) return; const now = Date.now(); const numBuckets = 30; const bucketSize = 60 * 1000; const buckets = new Array(numBuckets).fill(0); const labels = new Array(numBuckets).fill(''); for (const ts of timestamps) { const timeAgo = now - new Date(ts).getTime(); if (timeAgo >= 0 && timeAgo < numBuckets * bucketSize) { const bucketIndex = Math.floor(timeAgo / bucketSize); buckets[numBuckets - 1 - bucketIndex]++; } } if (this.activityChartInstance) this.activityChartInstance.destroy(); const ctx = dom.activityChartCanvas.getContext('2d'); this.activityChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ data: buckets, backgroundColor: 'rgba(211, 143, 186, 0.8)', borderWidth: 0, borderRadius: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { y: { display: false, beginAtZero: true, suggestedMax: Math.max(...buckets, 5) }, x: { display: false } } } }); },
+    showVisitorMap(visitData) { if (!dom.mapModal || !dom.mapContainer) return; dom.mapModal.classList.add('visible'); dom.mapContainer.innerHTML = ''; const countryData = visitData.countries || {}; if (Object.keys(countryData).length === 0) { dom.mapContainer.innerHTML = '<p>No visitor data yet! Be the first.</p>'; return; } const mapFills = { defaultFill: '#3a2e33' }; const dataset = {}; const counts = Object.values(countryData); const maxCount = Math.max(...counts, 1); const palette = chroma.scale(['#c979a8', '#f0e6e8']).domain([0, maxCount]); for (const [countryCode, count] of Object.entries(countryData)) { mapFills[countryCode] = palette(count).hex(); dataset[countryCode] = { fillKey: countryCode, visitCount: count }; } new Datamap({ element: dom.mapContainer, projection: 'mercator', fills: mapFills, data: dataset, geographyConfig: { borderColor: '#2b2125', highlightFillColor: '#d38fba', highlightBorderColor: 'rgba(0, 0, 0, 0.2)', popupTemplate: (geo, data) => `<div class="hoverinfo"><strong>${geo.properties.name}</strong><br>Visits: ${data ? data.visitCount : 0}</div>` } }); },
 };
 
 // -------------------
@@ -217,7 +138,6 @@ function bindEventListeners() {
             }
         });
     }
-
     if (dom.commentInput) dom.commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dom.postButton.click(); } });
     if (dom.visitsBox) dom.visitsBox.addEventListener('click', async () => ui.showVisitorMap(await api.fetchVisitSummary()));
     if (dom.closeModalButton) dom.closeModalButton.addEventListener('click', () => dom.mapModal.classList.remove('visible'));
@@ -229,35 +149,39 @@ async function main() {
     bindEventListeners();
     ui.renderProjects(config.PROJECTS);
 
-    // Fetch initial data concurrently for speed
+    // Fetch initial data concurrently for a fast page load
     const [comments, visitData, activityData] = await Promise.all([
         api.fetchComments(),
         api.fetchVisitSummary(),
         api.fetchActivityData()
     ]);
 
-    // Render initial UI with fetched data
+    // Render the UI with the data we just fetched
     ui.renderComments(comments);
     ui.drawActivityChart(activityData);
     
-    // FIX: Handle visit counting
+    // Set the initial visit count from the server
     let totalVisits = visitData.total_visits || 0;
     dom.visitsCountEl.textContent = totalVisits.toLocaleString();
 
+    // FIX: Check if this session has already logged a visit.
     if (!sessionStorage.getItem('visit_pinged')) {
-        await api.pingVisit();
-        // Manually increment the counter for immediate user feedback
+        // Increment the counter visually for instant feedback.
         totalVisits++;
         dom.visitsCountEl.textContent = totalVisits.toLocaleString();
+        
+        // Now, tell the backend to log the visit. This happens in the background.
+        api.pingVisit();
+        
+        // Set the flag so this session doesn't log another visit.
         sessionStorage.setItem('visit_pinged', 'true');
     }
 
-    // Set up refresh intervals
+    // Set up refresh intervals for dynamic data
     setInterval(async () => {
         const data = await api.fetchActivityData();
         ui.drawActivityChart(data);
     }, config.REFRESH_INTERVAL);
 }
 
-// Run the main function when the DOM is ready
 document.addEventListener('DOMContentLoaded', main);
