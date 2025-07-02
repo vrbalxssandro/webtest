@@ -3,28 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1vrb.gay</title>
+    <title>My Homepage</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Scripts for the map visualization and helpers -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.world.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+    <!-- Script for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <!-- This empty div will be our custom cursor -->
+    <div id="kaomoji-cursor">(´• ω •`)</div>
+
     <div class="container">
         <main class="projects-main">
             <h1>My Projects</h1>
-            <p class="subtitle">Here are some of the things I've been working on :P</p>
-            <div id="project-grid" class="project-grid">
-                <!-- Projects will be dynamically loaded here by script.js -->
-            </div>
+            <p class="subtitle">Here are some of the things I've been working on. Click to explore!</p>
+            <div id="project-grid" class="project-grid"></div>
         </main>
 
         <aside class="sidebar">
-            <div class="stats-container card">
-                 <div class="stat-box">
-                    <h2>Site Visits</h2>
-                    <p id="visits-count">0</p>
+            <!-- This card is now a draggable window -->
+            <div id="stats-window" class="draggable-window card">
+                <div class="window-header">Stats</div>
+                <div class="stats-container">
+                     <div class="stat-box" id="visits-box" title="Click to see visit map!">
+                        <h2>Site Visits</h2>
+                        <p id="visits-count">0</p>
+                    </div>
+                    <div class="stat-box">
+                        <h2>Total Posts</h2>
+                        <p id="posts-count">0</p>
+                    </div>
                 </div>
-                <div class="stat-box">
-                    <h2>Total Posts</h2>
-                    <p id="posts-count">0</p>
+            </div>
+
+            <!-- New "Now Playing" Widget -->
+            <div id="now-playing" class="card">
+                <h2>Now Playing</h2>
+                <div class="now-playing-content">
+                    <p>Loading...</p>
                 </div>
             </div>
 
@@ -46,8 +66,24 @@
                     <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
                 </audio>
             </div>
+            
+            <!-- New Infographics Chart -->
+            <div class="card">
+                <h2>Recent Activity</h2>
+                <div class="chart-container">
+                    <canvas id="recent-activity-chart"></canvas>
+                </div>
+            </div>
         </aside>
+    </div>
 
+    <!-- The modal for our map visualization -->
+    <div id="map-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-button">×</button>
+            <h3>Visitor Map</h3>
+            <div id="map-container"></div>
+        </div>
     </div>
 
     <script src="oneko.js"></script>
