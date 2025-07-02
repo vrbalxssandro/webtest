@@ -111,10 +111,45 @@ const ui = {
 
     setupKaomojiCursor() {
         if (!dom.kaomojiCursor) return;
+
+        // Helper functions to calculate contrast for dynamic cursor color
+        const getLuminance = (color) => {
+            const rgb = color.match(/\d+/g);
+            if (!rgb) return 0;
+            const a = rgb.slice(0, 3).map(v => {
+                v = parseInt(v) / 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+        };
+
+        const getEffectiveBackgroundColor = (element) => {
+            let el = element;
+            while (el) {
+                const color = window.getComputedStyle(el).backgroundColor;
+                if (color && color !== 'rgba(0, 0, 0, 0)') return color;
+                el = el.parentElement;
+            }
+            return 'rgb(255, 255, 255)';
+        };
+
+        let lastCheckedElement = null;
+        let contrastColor = '#2c282a'; // Default to dark text
+
         window.addEventListener('mousemove', e => {
             dom.kaomojiCursor.style.left = `${e.clientX}px`;
             dom.kaomojiCursor.style.top = `${e.clientY}px`;
+
+            const elem = document.elementFromPoint(e.clientX, e.clientY);
+            if (elem && elem !== lastCheckedElement) {
+                lastCheckedElement = elem;
+                const bgColor = getEffectiveBackgroundColor(elem);
+                const luminance = getLuminance(bgColor);
+                contrastColor = luminance > 0.4 ? '#2c282a' : '#f5f0f2'; // Dark on light, Light on dark
+            }
+            dom.kaomojiCursor.style.color = contrastColor;
         });
+
         document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; });
         document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; });
     },
@@ -166,7 +201,21 @@ const ui = {
         }
         if (this.activityChartInstance) this.activityChartInstance.destroy();
         const ctx = dom.activityChartCanvas.getContext('2d');
-        this.activityChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ data: buckets, backgroundColor: 'rgba(211, 143, 186, 0.8)', borderWidth: 0, borderRadius: 2, barPercentage: 1.0, categoryPercentage: 1.0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { display: true, beginAtZero: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', precision: 0 }, grid: { color: 'rgba(240, 230, 232, 0.1)' }, title: { display: true, text: 'Visits', color: 'rgba(240, 230, 232, 0.7)' }, suggestedMax: Math.max(...buckets, 5) }, x: { display: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: false } } } } });
+        this.activityChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: buckets,
+                    backgroundColor: 'rgba(224, 108, 159, 0.8)', // Updated accent color
+                    borderWidth: 0,
+                    borderRadius: 2,
+                    barPercentage: 1.0,
+                    categoryPercentage: 1.0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { display: true, beginAtZero: true, ticks: { color: 'rgba(168, 159, 162, 0.7)', precision: 0 }, grid: { color: 'rgba(168, 159, 162, 0.15)' }, title: { display: true, text: 'Visits', color: 'rgba(245, 240, 242, 0.8)' }, suggestedMax: Math.max(...buckets, 5) }, x: { display: true, ticks: { color: 'rgba(168, 159, 162, 0.7)', autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: false } } } }
+        });
     },
 
     showVisitorMap(visitData) {
@@ -183,7 +232,7 @@ const ui = {
         const dataset = {};
         const counts = Object.values(countryData);
         const maxCount = Math.max(...counts, 1);
-        const palette = chroma.scale(['#c979a8', '#f0e6e8']).domain([0, maxCount]);
+        const palette = chroma.scale(['#e06c9f', '#f5f0f2']).domain([0, maxCount]); // Updated colors
         for (const [code2, count] of Object.entries(countryData)) {
             const code3 = countryCodeMap[code2];
             if (code3) {
@@ -192,8 +241,18 @@ const ui = {
             }
         }
         new Datamap({
-            element: dom.mapContainer, projection: 'mercator', fills: mapFills, data: dataset,
-            geographyConfig: { borderColor: '#2b2125', highlightFillColor: '#d38fba', highlightBorderColor: 'rgba(0, 0, 0, 0.2)', popupTemplate: (geo, data) => `<div class="hoverinfo"><strong>${geo.properties.name}</strong><br>Visits: <span class="popup-visits-count">${data ? data.visitCount : 0}</span></div>` }
+            element: dom.mapContainer,
+            projection: 'mercator',
+            fills: mapFills,
+            data: dataset,
+            geographyConfig: {
+                borderColor: '#2b2125',
+                highlightFillColor: '#d15c8f', // Use hover accent color
+                highlightBorderColor: 'rgba(0, 0, 0, 0.2)',
+                popupTemplate: (geo, data) =>
+                    `<div class="custom-hoverinfo"><div class="custom-hoverinfo-country">${geo.properties.name}</div><div class="custom-hoverinfo-data"><span>Visits</span><span class="custom-hoverinfo-count">${data ? data.visitCount.toLocaleString() : 0}</span></div></div>`
+
+            }
         });
     },
 
