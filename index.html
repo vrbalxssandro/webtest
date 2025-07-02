@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1vrb.gay</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <main class="projects-main">
+            <h1>My Projects</h1>
+            <p class="subtitle">Here are some of the things I've been working on :P</p>
+            <div id="project-grid" class="project-grid">
+                <!-- Projects will be dynamically loaded here by script.js -->
+            </div>
+        </main>
+
+        <aside class="sidebar">
+            <div class="stats-container card">
+                 <div class="stat-box">
+                    <h2>Site Visits</h2>
+                    <p id="visits-count">0</p>
+                </div>
+                <div class="stat-box">
+                    <h2>Total Posts</h2>
+                    <p id="posts-count">0</p>
+                </div>
+            </div>
+
+            <div id="timeline-container" class="timeline-container card">
+                <h2>Live Comments</h2>
+                <div class="post-box">
+                    <input type="text" id="username-input" placeholder="Your name">
+                    <textarea id="comment-input" placeholder="Leave a public comment!"></textarea>
+                    <button id="post-button">Post</button>
+                </div>
+                <div id="timeline" class="timeline">
+                    <p class="loading-message">Loading comments...</p>
+                </div>
+            </div>
+
+             <div class="music-player-container card">
+                <h2>Music Player</h2>
+                <audio controls loop>
+                    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </aside>
+
+    </div>
+
+    <script src="oneko.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
