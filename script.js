@@ -99,7 +99,77 @@ const ui = {
     setupKaomojiCursor() { if (!dom.kaomojiCursor) return; window.addEventListener('mousemove', e => { dom.kaomojiCursor.style.left = `${e.clientX}px`; dom.kaomojiCursor.style.top = `${e.clientY}px`; }); document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; }); document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; }); },
     renderProjects(projects) { if (!dom.projectGrid) return; dom.projectGrid.innerHTML = ''; projects.forEach(project => { const card = document.createElement('a'); card.href = project.url; card.className = 'project-card'; card.innerHTML = `<img src="${project.image}" alt="${project.title} thumbnail"><div class="project-card-content"><h3>${escapeHTML(project.title)}</h3><p>${escapeHTML(project.description)}</p></div>`; dom.projectGrid.appendChild(card); }); },
     renderComments(comments) { if (!dom.timeline || !dom.postsCountEl) return; dom.timeline.innerHTML = ''; if (comments.length === 0) { dom.timeline.innerHTML = '<p class="loading-message">No comments yet. Be the first!</p>'; } else { comments.forEach(c => { const el = document.createElement('div'); el.className = 'comment'; el.innerHTML = `<div class="comment-header"><span class="comment-user">${escapeHTML(c.username)}</span><span class="comment-time">${formatTimeAgo(c.timestamp)}</span></div><p class="comment-message">${escapeHTML(c.message)}</p>`; dom.timeline.appendChild(el); }); } dom.postsCountEl.textContent = comments.length.toLocaleString(); },
-    drawActivityChart(timestamps) { if (!dom.activityChartCanvas) return; const now = Date.now(); const numBuckets = 30; const bucketSize = 60 * 1000; const buckets = new Array(numBuckets).fill(0); const labels = new Array(numBuckets).fill(''); for (const ts of timestamps) { const timeAgo = now - new Date(ts).getTime(); if (timeAgo >= 0 && timeAgo < numBuckets * bucketSize) { const bucketIndex = Math.floor(timeAgo / bucketSize); buckets[numBuckets - 1 - bucketIndex]++; } } if (this.activityChartInstance) this.activityChartInstance.destroy(); const ctx = dom.activityChartCanvas.getContext('2d'); this.activityChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ data: buckets, backgroundColor: 'rgba(211, 143, 186, 0.8)', borderWidth: 0, borderRadius: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { y: { display: false, beginAtZero: true, suggestedMax: Math.max(...buckets, 5) }, x: { display: false } } } }); },
+        drawActivityChart(timestamps) {
+        if (!dom.activityChartCanvas) return;
+        const now = Date.now();
+        const numBuckets = 30;
+        const bucketSize = 60 * 1000;
+        const buckets = new Array(numBuckets).fill(0);
+
+        // FIX: Create labels for the X-axis
+        const labels = Array(numBuckets).fill('').map((_, i) => {
+            if ((numBuckets - i - 1) % 5 === 0) { // Add a label every 5 minutes
+                return `${numBuckets - 1 - i}m ago`;
+            }
+            return '';
+        }).reverse();
+
+        for (const ts of timestamps) {
+            const timeAgo = now - new Date(ts).getTime();
+            if (timeAgo >= 0 && timeAgo < numBuckets * bucketSize) {
+                const bucketIndex = Math.floor(timeAgo / bucketSize);
+                buckets[numBuckets - 1 - bucketIndex]++;
+            }
+        }
+        
+        if (this.activityChartInstance) this.activityChartInstance.destroy();
+        const ctx = dom.activityChartCanvas.getContext('2d');
+        this.activityChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: buckets,
+                    backgroundColor: 'rgba(211, 143, 186, 0.8)',
+                    borderWidth: 0,
+                    borderRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: true } // Enable tooltips on hover
+                },
+                scales: {
+                    // FIX: Display the Y-axis with suggested steps
+                    y: {
+                        display: true,
+                        beginAtZero: true,
+                        ticks: {
+                            color: 'rgba(240, 230, 232, 0.5)',
+                            precision: 0 // Only show whole numbers
+                        },
+                        grid: {
+                           color: 'rgba(240, 230, 232, 0.1)'
+                        },
+                        suggestedMax: Math.max(...buckets, 5)
+                    },
+                    // FIX: Display the X-axis
+                    x: {
+                        display: true,
+                        ticks: {
+                            color: 'rgba(240, 230, 232, 0.5)'
+                        },
+                        grid: {
+                           display: false // Keep X-axis grid lines hidden
+                        }
+                    }
+                }
+            }
+        });
+    },
 
     // ================== THIS FUNCTION IS THE CORE FIX ==================
     showVisitorMap(visitData) {
