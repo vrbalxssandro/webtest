@@ -1,42 +1,10 @@
+/* All styles up to the sidebar are unchanged. */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-
-:root {
-    --bg-color: #e6c8d3;
-    --card-bg: #2b2125;
-    --card-hover-bg: #3a2e33;
-    --text-color: #f0e6e8;
-    --text-secondary: #a09398;
-    --accent-color: #d38fba;
-    --accent-color-hover: #c979a8;
-}
-
-html, body, a, button, input, textarea {
-    cursor: none;
-}
-
+:root { --bg-color: #e6c8d3; --card-bg: #2b2125; --card-hover-bg: #3a2e33; --text-color: #f0e6e8; --text-secondary: #a09398; --accent-color: #d38fba; --accent-color-hover: #c979a8; }
+html, body, a, button, input, textarea { cursor: none; }
 body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Roboto', sans-serif; margin: 0; padding: 20px; }
-
 body.modal-open #kaomoji-cursor { display: none; }
-
-#kaomoji-cursor {
-    position: fixed;
-    top: 0; left: 0;
-    pointer-events: none;
-    font-size: 20px;
-    z-index: 9999;
-    color: var(--text-color);
-    text-shadow: 0 0 5px var(--card-bg);
-}
-
-/* === NEW Cursor Alignment Classes === */
-#kaomoji-cursor.top-left {
-    transform: translate(5px, 5px); /* Default top-left corner */
-}
-#kaomoji-cursor.center-mouth {
-    transform: translate(-50%, -40%); /* Centered on the mouth */
-}
-
-
+#kaomoji-cursor { position: fixed; top: 0; left: 0; pointer-events: none; font-size: 20px; z-index: 9999; color: var(--text-color); text-shadow: 0 0 5px var(--card-bg); transform: translate(-50%, -50%); }
 .container { display: grid; grid-template-columns: 2.5fr 1fr; gap: 20px; max-width: 1400px; margin: 0 auto; }
 .projects-main { background-color: var(--card-bg); padding: 30px; border-radius: 8px; }
 .projects-main h1 { margin: 0; font-size: 2.5rem; }
@@ -50,14 +18,12 @@ body.modal-open #kaomoji-cursor { display: none; }
 .project-card p { margin: 0; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.4; }
 .sidebar { display: flex; flex-direction: column; gap: 20px; }
 .card { background-color: var(--card-bg); padding: 20px; border-radius: 8px; }
-
 .stats-card { display: flex; gap: 20px; padding: 15px; }
 .stat-box { flex: 1; padding: 10px; border-radius: 6px; text-align: center; }
 #visits-box { border: 1px solid transparent; transition: border-color 0.2s; }
 #visits-box:hover { border-color: var(--accent-color); }
 .stat-box h2 { margin: 0 0 5px 0; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
 .stat-box p { margin: 0; font-size: 1.8rem; font-weight: bold; }
-
 .timeline-container h2 { margin: 0 0 15px 0; color: var(--text-secondary); font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
 .post-box { display: flex; flex-direction: column; gap: 10px; }
 .post-box input, .post-box textarea { background-color: var(--card-hover-bg); border: 1px solid #4a3c43; color: var(--text-color); padding: 12px; border-radius: 6px; font-family: inherit; font-size: 1rem; resize: vertical; }
@@ -68,56 +34,76 @@ body.modal-open #kaomoji-cursor { display: none; }
 .comment-user { font-weight: bold; font-size: 1.1rem; color: var(--text-color); }
 .comment-time { font-size: 0.85rem; color: var(--text-secondary); }
 .comment-message { margin: 0; line-height: 1.5; word-break: break-word; color: #dcd7da; }
-
-.music-player-container h2, .card > h2 { font-weight: 700; font-size: 1.2rem; margin: 0 0 15px 0; }
-.music-player-container audio { width: 100%; color-scheme: light; }
+.card > h2 { font-weight: 700; font-size: 1.2rem; margin: 0 0 15px 0; }
 .chart-container { height: 150px; }
-
-/* === NEW Settings Card Styles === */
-.settings-card h2 { margin-top: 0; }
-.settings-card button {
-    width: 100%;
-    background-color: var(--card-hover-bg);
-    border: 1px solid #4a3c43;
-    color: var(--text-color);
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    transition: background-color 0.2s, border-color 0.2s;
-}
-.settings-card button:hover {
-    background-color: #4a3c43;
-    border-color: var(--accent-color);
-}
-
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
 .modal-overlay.visible { opacity: 1; pointer-events: auto; cursor: default; }
 .modal-content { background: var(--card-bg); padding: 20px; border-radius: 8px; width: 90%; max-width: 900px; position: relative; }
 .close-button { position: absolute; top: 10px; right: 15px; background: none; border: none; color: var(--text-secondary); font-size: 2rem; cursor: pointer !important; }
 #map-container { height: 500px; }
 .datamap { position: relative; }
+.datamaps-hoverover { background: var(--card-hover-bg) !important; color: var(--text-color) !important; border: 1px solid var(--accent-color) !important; border-radius: 6px !important; padding: 8px 12px !important; font-family: 'Roboto', sans-serif !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important; pointer-events: none !important; transform: translate(15px, 10px) !important; }
+.popup-visits-count { font-size: 1.1em; font-weight: bold; color: var(--accent-color); }
 
-.datamaps-hoverover {
-    /* Style */
-    background: var(--card-hover-bg) !important;
-    /* THIS IS THE NEW LINE */
-    color: var(--text-color) !important; /* Makes all text in the popup visible */
-    border: 1px solid var(--accent-color) !important;
-    border-radius: 6px !important;
-    padding: 8px 12px !important;
-    font-family: 'Roboto', sans-serif !important;
-    font-size: 0.85rem !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-
-    /* Behavior Fixes */
-    pointer-events: none !important; 
-    transform: translate(15px, 10px) !important;
+/* === NEW MUSIC PLAYER STYLES === */
+#music-player-container {
+    position: relative;
 }
-
-.popup-visits-count {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: var(--accent-color);
+#waveform {
+    height: 90px;
+    cursor: pointer !important;
+}
+#waveform-loading {
+    position: absolute;
+    top: 55px; /* Adjust to center on the empty waveform area */
+    left: 20px;
+    right: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    pointer-events: none; /* Allows drop to work */
+}
+.player-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 15px;
+    gap: 15px;
+}
+.player-controls button, .upload-btn {
+    background-color: var(--card-hover-bg);
+    border: 1px solid #4a3c43;
+    color: var(--text-color);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: background-color 0.2s;
+}
+.player-controls button:hover, .upload-btn:hover {
+    background-color: #4a3c43;
+}
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-grow: 1;
+}
+.volume-control input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: #4a3c43;
+    outline: none;
+    border-radius: 2px;
+}
+.volume-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent-color);
+    border-radius: 50%;
 }
 
 @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } .projects-main { order: 1; } .sidebar { order: 2; } }
