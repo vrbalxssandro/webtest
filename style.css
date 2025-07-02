@@ -97,9 +97,28 @@ body.modal-open #kaomoji-cursor { display: none; }
 #map-container { height: 500px; }
 .datamap { position: relative; }
 
-.datamaps-hoverover { background: var(--card-hover-bg) !important; color: var(--text-color) !important; border: 1px solid var(--accent-color) !important; border-radius: 6px !important; padding: 6px 10px !important; font-family: 'Roboto', sans-serif !important; font-size: 0.85rem !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important; pointer-events: none !important; transform: translate(15px, 10px) !important; }
-/* === NEW Rule for visit count number === */
-.popup-visits-count { font-size: 1.1em; font-weight: bold; color: var(--accent-color); }
+.datamaps-hoverover {
+    /* Style */
+    background: var(--card-hover-bg) !important;
+    /* THIS IS THE NEW LINE */
+    color: var(--text-color) !important; /* Makes all text in the popup visible */
+    border: 1px solid var(--accent-color) !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-family: 'Roboto', sans-serif !important;
+    font-size: 0.85rem !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+
+    /* Behavior Fixes */
+    pointer-events: none !important; 
+    transform: translate(15px, 10px) !important;
+}
+
+.popup-visits-count {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--accent-color);
+}
 
 @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } .projects-main { order: 1; } .sidebar { order: 2; } }
 .timeline::-webkit-scrollbar { width: 8px; } .timeline::-webkit-scrollbar-track { background: #3a2e33; border-radius: 4px; } .timeline::-webkit-scrollbar-thumb { background: var(--text-secondary); border-radius: 4px; }
