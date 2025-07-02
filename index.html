@@ -5,11 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Homepage</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Scripts for the map visualization and helpers -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.world.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+    <!-- Script for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Script for the custom music player -->
     <script src="https://unpkg.com/wavesurfer.js"></script>
 </head>
 <body>
@@ -24,16 +27,26 @@
 
         <aside class="sidebar">
             <div class="stats-card card">
-                 <div class="stat-box" id="visits-box" title="Click to see visit map!"><h2>Total Visits</h2><p id="visits-count">0</p></div>
-                 <div class="stat-box"><h2>Total Posts</h2><p id="posts-count">0</p></div>
+                 <div class="stat-box" id="visits-box" title="Click to see visit map!">
+                    <h2>Total Visits</h2>
+                    <p id="visits-count">0</p>
+                </div>
+                <div class="stat-box">
+                    <h2>Total Posts</h2>
+                    <p id="posts-count">0</p>
+                </div>
             </div>
 
             <div class="timeline-container card">
                 <h2>Live Comments</h2>
                 <div class="post-box">
-                    <input type="text" id="username-input" placeholder="Your name"><textarea id="comment-input" placeholder="Leave a public comment!"></textarea><button id="post-button">Post</button>
+                    <input type="text" id="username-input" placeholder="Your name">
+                    <textarea id="comment-input" placeholder="Leave a public comment!"></textarea>
+                    <button id="post-button">Post</button>
                 </div>
-                <div id="timeline" class="timeline"><p class="loading-message">Loading comments...</p></div>
+                <div id="timeline" class="timeline">
+                    <p class="loading-message">Loading comments...</p>
+                </div>
             </div>
 
             <!-- NEW SOUNDCLOUD-STYLE MUSIC PLAYER -->
@@ -59,7 +72,9 @@
             
             <div class="card">
                 <h2>Recent Activity</h2>
-                <div class="chart-container"><canvas id="recent-activity-chart"></canvas></div>
+                <div class="chart-container">
+                    <canvas id="recent-activity-chart"></canvas>
+                </div>
             </div>
             
             <div class="settings-card card">

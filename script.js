@@ -38,7 +38,6 @@ const dom = {
     mapContainer: document.getElementById('map-container'),
     activityChartCanvas: document.getElementById('recent-activity-chart'),
     cursorToggleBtn: document.getElementById('cursor-toggle-btn'),
-    // NEW Music Player Elements
     musicPlayerContainer: document.getElementById('music-player-container'),
     waveformContainer: document.getElementById('waveform'),
     waveformLoading: document.getElementById('waveform-loading'),
@@ -57,7 +56,8 @@ const dom = {
 const api = {
     async pingVisit() {
         try {
-            await fetch(config.API_ENDPOINTS.pingVisit, { method: 'POST' });
+            const response = await fetch(config.API_ENDPOINTS.pingVisit, { method: 'POST' });
+            if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
         } catch (error) {
             console.error("Could not ping visit:", error);
         }
@@ -108,12 +108,98 @@ const api = {
 // -------------------
 const ui = {
     activityChartInstance: null,
-    setupKaomojiCursor() { if (!dom.kaomojiCursor) return; window.addEventListener('mousemove', e => { dom.kaomojiCursor.style.left = `${e.clientX}px`; dom.kaomojiCursor.style.top = `${e.clientY}px`; }); document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; }); document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; }); },
-    renderProjects(projects) { if (!dom.projectGrid) return; dom.projectGrid.innerHTML = ''; projects.forEach(project => { const card = document.createElement('a'); card.href = project.url; card.className = 'project-card'; card.innerHTML = `<img src="${project.image}" alt="${project.title} thumbnail"><div class="project-card-content"><h3>${escapeHTML(project.title)}</h3><p>${escapeHTML(project.description)}</p></div>`; dom.projectGrid.appendChild(card); }); },
-    renderComments(comments) { if (!dom.timeline || !dom.postsCountEl) return; dom.timeline.innerHTML = ''; if (comments.length === 0) { dom.timeline.innerHTML = '<p class="loading-message">No comments yet. Be the first!</p>'; } else { comments.forEach(c => { const el = document.createElement('div'); el.className = 'comment'; el.innerHTML = `<div class="comment-header"><span class="comment-user">${escapeHTML(c.username)}</span><span class="comment-time">${formatTimeAgo(c.timestamp)}</span></div><p class="comment-message">${escapeHTML(c.message)}</p>`; dom.timeline.appendChild(el); }); } dom.postsCountEl.textContent = comments.length.toLocaleString(); },
-    drawActivityChart(timestamps) { if (!dom.activityChartCanvas) return; const now = Date.now(); const numBuckets = 30; const bucketSize = 60 * 1000; const buckets = new Array(numBuckets).fill(0); const labels = new Array(numBuckets).fill(''); labels[0] = '30m ago'; labels[14] = '15m ago'; labels[29] = 'Now'; for (const ts of timestamps) { const timeAgo = now - new Date(ts).getTime(); if (timeAgo >= 0 && timeAgo < numBuckets * bucketSize) { const bucketIndex = Math.floor(timeAgo / bucketSize); buckets[numBuckets - 1 - bucketIndex]++; } } if (this.activityChartInstance) this.activityChartInstance.destroy(); const ctx = dom.activityChartCanvas.getContext('2d'); this.activityChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ data: buckets, backgroundColor: 'rgba(211, 143, 186, 0.8)', borderWidth: 0, borderRadius: 2, barPercentage: 1.0, categoryPercentage: 1.0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { display: true, beginAtZero: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', precision: 0 }, grid: { color: 'rgba(240, 230, 232, 0.1)' }, title: { display: true, text: 'Visits', color: 'rgba(240, 230, 232, 0.7)' }, suggestedMax: Math.max(...buckets, 5) }, x: { display: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: false } } } } }); },
-    showVisitorMap(visitData) { if (!dom.mapModal || !dom.mapContainer) return; document.body.classList.add('modal-open'); dom.mapModal.classList.add('visible'); dom.mapContainer.innerHTML = ''; const countryData = visitData.countries || {}; if (Object.keys(countryData).length === 0) { dom.mapContainer.innerHTML = '<p>No visitor data yet! Be the first.</p>'; return; } const mapFills = { defaultFill: '#3a2e33' }; const dataset = {}; const counts = Object.values(countryData); const maxCount = Math.max(...counts, 1); const palette = chroma.scale(['#c979a8', '#f0e6e8']).domain([0, maxCount]); for (const [code2, count] of Object.entries(countryData)) { const code3 = countryCodeMap[code2]; if (code3) { mapFills[code3] = palette(count).hex(); dataset[code3] = { fillKey: code3, visitCount: count }; } } new Datamap({ element: dom.mapContainer, projection: 'mercator', fills: mapFills, data: dataset, geographyConfig: { borderColor: '#2b2125', highlightFillColor: '#d38fba', highlightBorderColor: 'rgba(0, 0, 0, 0.2)', popupTemplate: (geo, data) => `<div class="hoverinfo"><strong>${geo.properties.name}</strong><br>Visits: <span class="popup-visits-count">${data ? data.visitCount : 0}</span></div>` } }); },
-    updateVisitCount(count) { if (dom.visitsCountEl) dom.visitsCountEl.textContent = count.toLocaleString(); }
+
+    setupKaomojiCursor() {
+        if (!dom.kaomojiCursor) return;
+        window.addEventListener('mousemove', e => {
+            dom.kaomojiCursor.style.left = `${e.clientX}px`;
+            dom.kaomojiCursor.style.top = `${e.clientY}px`;
+        });
+        document.body.addEventListener('mousedown', () => { dom.kaomojiCursor.textContent = '(>ω<)'; });
+        document.body.addEventListener('mouseup', () => { dom.kaomojiCursor.textContent = '(´• ω •`)'; });
+    },
+
+    renderProjects(projects) {
+        if (!dom.projectGrid) return;
+        dom.projectGrid.innerHTML = '';
+        projects.forEach(project => {
+            const card = document.createElement('a');
+            card.href = project.url;
+            card.className = 'project-card';
+            card.innerHTML = `<img src="${project.image}" alt="${project.title} thumbnail"><div class="project-card-content"><h3>${escapeHTML(project.title)}</h3><p>${escapeHTML(project.description)}</p></div>`;
+            dom.projectGrid.appendChild(card);
+        });
+    },
+
+    renderComments(comments) {
+        if (!dom.timeline || !dom.postsCountEl) return;
+        dom.timeline.innerHTML = '';
+        if (comments.length === 0) {
+            dom.timeline.innerHTML = '<p class="loading-message">No comments yet. Be the first!</p>';
+        } else {
+            comments.forEach(c => {
+                const el = document.createElement('div');
+                el.className = 'comment';
+                el.innerHTML = `<div class="comment-header"><span class="comment-user">${escapeHTML(c.username)}</span><span class="comment-time">${formatTimeAgo(c.timestamp)}</span></div><p class="comment-message">${escapeHTML(c.message)}</p>`;
+                dom.timeline.appendChild(el);
+            });
+        }
+        dom.postsCountEl.textContent = comments.length.toLocaleString();
+    },
+
+    drawActivityChart(timestamps) {
+        if (!dom.activityChartCanvas) return;
+        const now = Date.now();
+        const numBuckets = 36;
+        const bucketSize = 10 * 60 * 1000;
+        const buckets = new Array(numBuckets).fill(0);
+        const labels = new Array(numBuckets).fill('');
+        labels[0] = '6h ago';
+        labels[14] = '3h ago';
+        labels[29] = 'Now';
+        for (const ts of timestamps) {
+            const timeAgo = now - new Date(ts).getTime();
+            if (timeAgo >= 0 && timeAgo < numBuckets * bucketSize) {
+                const bucketIndex = Math.floor(timeAgo / bucketSize);
+                buckets[numBuckets - 1 - bucketIndex]++;
+            }
+        }
+        if (this.activityChartInstance) this.activityChartInstance.destroy();
+        const ctx = dom.activityChartCanvas.getContext('2d');
+        this.activityChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ data: buckets, backgroundColor: 'rgba(211, 143, 186, 0.8)', borderWidth: 0, borderRadius: 2, barPercentage: 1.0, categoryPercentage: 1.0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true } }, scales: { y: { display: true, beginAtZero: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', precision: 0 }, grid: { color: 'rgba(240, 230, 232, 0.1)' }, title: { display: true, text: 'Visits', color: 'rgba(240, 230, 232, 0.7)' }, suggestedMax: Math.max(...buckets, 5) }, x: { display: true, ticks: { color: 'rgba(240, 230, 232, 0.5)', autoSkip: false, maxRotation: 0, minRotation: 0 }, grid: { display: false } } } } });
+    },
+
+    showVisitorMap(visitData) {
+        if (!dom.mapModal || !dom.mapContainer) return;
+        document.body.classList.add('modal-open');
+        dom.mapModal.classList.add('visible');
+        dom.mapContainer.innerHTML = '';
+        const countryData = visitData.countries || {};
+        if (Object.keys(countryData).length === 0) {
+            dom.mapContainer.innerHTML = '<p>No visitor data yet! Be the first.</p>';
+            return;
+        }
+        const mapFills = { defaultFill: '#3a2e33' };
+        const dataset = {};
+        const counts = Object.values(countryData);
+        const maxCount = Math.max(...counts, 1);
+        const palette = chroma.scale(['#c979a8', '#f0e6e8']).domain([0, maxCount]);
+        for (const [code2, count] of Object.entries(countryData)) {
+            const code3 = countryCodeMap[code2];
+            if (code3) {
+                mapFills[code3] = palette(count).hex();
+                dataset[code3] = { fillKey: code3, visitCount: count };
+            }
+        }
+        new Datamap({
+            element: dom.mapContainer, projection: 'mercator', fills: mapFills, data: dataset,
+            geographyConfig: { borderColor: '#2b2125', highlightFillColor: '#d38fba', highlightBorderColor: 'rgba(0, 0, 0, 0.2)', popupTemplate: (geo, data) => `<div class="hoverinfo"><strong>${geo.properties.name}</strong><br>Visits: <span class="popup-visits-count">${data ? data.visitCount : 0}</span></div>` }
+        });
+    },
+
+    updateVisitCount(count) {
+        if (dom.visitsCountEl) dom.visitsCountEl.textContent = count.toLocaleString();
+    }
 };
 
 // -------------------
@@ -142,87 +228,82 @@ function setupCursorToggle() {
     });
 }
 
-// -------------------
-// NEW: MUSIC PLAYER LOGIC
-// -------------------
 function initializeMusicPlayer() {
-    if (!dom.waveformContainer) return;
-
+    if (!dom.musicPlayerContainer) return;
     const playIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M8 5v14l11-7z"></path></svg>`;
     const pauseIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>`;
     dom.playBtn.innerHTML = playIcon;
 
     const wavesurfer = WaveSurfer.create({
-        container: '#waveform',
-        waveColor: '#a09398',
-        progressColor: '#d38fba',
-        barWidth: 3,
-        barRadius: 3,
-        barGap: 2,
-        height: 70,
-        responsive: true,
-        hideScrollbar: true,
+        container: '#waveform', waveColor: '#a09398', progressColor: '#d38fba',
+        barWidth: 3, barRadius: 3, barGap: 2, height: 70, responsive: true, hideScrollbar: true,
     });
 
-    const formatTime = (seconds) => {
-        const minutes = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-    };
-
-    wavesurfer.on('ready', () => {
-        dom.waveformLoading.style.opacity = '0';
-        dom.timeTotal.textContent = formatTime(wavesurfer.getDuration());
-        wavesurfer.play();
-    });
-
-    wavesurfer.on('audioprocess', () => {
-        dom.timeCurrent.textContent = formatTime(wavesurfer.getCurrentTime());
-    });
-
+    const formatTime = (seconds) => { const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return `${m}:${s < 10 ? '0' : ''}${s}`; };
+    wavesurfer.on('ready', () => { dom.waveformLoading.style.opacity = '0'; dom.timeTotal.textContent = formatTime(wavesurfer.getDuration()); wavesurfer.play(); });
+    wavesurfer.on('audioprocess', () => { dom.timeCurrent.textContent = formatTime(wavesurfer.getCurrentTime()); });
     wavesurfer.on('play', () => { dom.playBtn.innerHTML = pauseIcon; });
     wavesurfer.on('pause', () => { dom.playBtn.innerHTML = playIcon; });
-    wavesurfer.on('finish', () => { dom.playBtn.innerHTML = playIcon; wavesurfer.seekTo(0); });
+    wavesurfer.on('finish', () => { dom.playBtn.innerHTML = playIcon; wavesurfer.seekTo(0); dom.timeCurrent.textContent = "0:00"; });
     wavesurfer.on('error', (err) => { dom.waveformLoading.textContent = `Error: ${err}`; dom.waveformLoading.style.opacity = '1'; });
-
     dom.playBtn.onclick = () => wavesurfer.playPause();
     dom.volumeSlider.oninput = (e) => wavesurfer.setVolume(e.target.value);
     dom.volumeIcon.onclick = () => wavesurfer.toggleMute();
-    wavesurfer.on('volume', (volume) => { dom.volumeIcon.textContent = volume > 0 ? '🔊' : '🔇'; });
+    wavesurfer.on('volume', (volume) => { dom.volumeIcon.textContent = wavesurfer.getMute() ? '🔇' : '🔊'; });
 
-    const loadFile = (file) => {
-        if (file) {
-            dom.waveformLoading.textContent = 'Loading waveform...';
-            dom.waveformLoading.style.opacity = '1';
-            dom.trackTitle.textContent = file.name;
-            wavesurfer.load(URL.createObjectURL(file));
-        }
-    };
+    const loadFile = (file) => { if (file) { dom.waveformLoading.textContent = 'Loading...'; dom.waveformLoading.style.opacity = '1'; dom.trackTitle.textContent = file.name; wavesurfer.load(URL.createObjectURL(file)); } };
     dom.audioUpload.onchange = (e) => loadFile(e.target.files[0]);
     dom.musicPlayerContainer.ondragover = (e) => e.preventDefault();
     dom.musicPlayerContainer.ondrop = (e) => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); };
 }
 
-// -------------------
-// INITIALIZATION LOGIC
-// -------------------
-function setupCursorToggle() { if (!dom.cursorToggleBtn || !dom.kaomojiCursor) return; const KEY = 'cursorAlignment'; let alignment = localStorage.getItem(KEY) || 'center-mouth'; const apply = (align) => { dom.kaomojiCursor.classList.remove('center-mouth', 'top-left'); dom.kaomojiCursor.classList.add(align); localStorage.setItem(KEY, align); }; apply(alignment); dom.cursorToggleBtn.addEventListener('click', () => { const newAlign = dom.kaomojiCursor.classList.contains('center-mouth') ? 'top-left' : 'center-mouth'; apply(newAlign); }); }
-function bindEventListeners() { if (dom.postButton) { dom.postButton.addEventListener('click', async () => { const u = dom.usernameInput.value.trim() || 'Anonymous', m = dom.commentInput.value.trim(); if (!m) return alert('Message cannot be empty.'); dom.postButton.disabled = true; dom.postButton.textContent = '...'; try { await api.postComment(u, m); const c = await api.fetchComments(); ui.renderComments(c); dom.commentInput.value = ''; } catch (e) { console.error('Error posting comment:', e); alert('An error occurred.'); } finally { dom.postButton.disabled = false; dom.postButton.textContent = 'Post'; } }); } if (dom.commentInput) dom.commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dom.postButton.click(); } }); if (dom.visitsBox) dom.visitsBox.addEventListener('click', async () => ui.showVisitorMap(await api.fetchVisitSummary())); if (dom.closeModalButton) dom.closeModalButton.addEventListener('click', () => { dom.mapModal.classList.remove('visible'); document.body.classList.remove('modal-open'); }); if (dom.mapModal) dom.mapModal.addEventListener('click', (e) => { if (e.target === dom.mapModal) { dom.mapModal.classList.remove('visible'); document.body.classList.remove('modal-open'); } }); }
+function bindEventListeners() {
+    if (dom.postButton) {
+        dom.postButton.addEventListener('click', async () => {
+            const username = dom.usernameInput.value.trim() || 'Anonymous';
+            const message = dom.commentInput.value.trim();
+            if (!message) return alert('Message cannot be empty.');
+            dom.postButton.disabled = true; dom.postButton.textContent = '...';
+            try {
+                await api.postComment(username, message);
+                const comments = await api.fetchComments();
+                ui.renderComments(comments);
+                dom.commentInput.value = '';
+            } catch (error) { console.error('Error posting comment:', error); alert('An error occurred.');
+            } finally { dom.postButton.disabled = false; dom.postButton.textContent = 'Post'; }
+        });
+    }
+    if (dom.commentInput) dom.commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dom.postButton.click(); } });
+    if (dom.visitsBox) dom.visitsBox.addEventListener('click', async () => ui.showVisitorMap(await api.fetchVisitSummary()));
+    if (dom.closeModalButton) dom.closeModalButton.addEventListener('click', () => { dom.mapModal.classList.remove('visible'); document.body.classList.remove('modal-open'); });
+    if (dom.mapModal) dom.mapModal.addEventListener('click', (e) => { if (e.target === dom.mapModal) { dom.mapModal.classList.remove('visible'); document.body.classList.remove('modal-open'); } });
+}
+
 async function main() {
     ui.setupKaomojiCursor();
     setupCursorToggle();
     bindEventListeners();
-    initializeMusicPlayer(); // Initialize the new player
+    initializeMusicPlayer();
     ui.renderProjects(config.PROJECTS);
-    const [comments, visitData, activityData] = await Promise.all([api.fetchComments(), api.fetchVisitSummary(), api.fetchActivityData()]);
+    
+    const [comments, visitData, activityData] = await Promise.all([
+        api.fetchComments(),
+        api.fetchVisitSummary(),
+        api.fetchActivityData()
+    ]);
+    
     ui.renderComments(comments);
     ui.drawActivityChart(activityData);
     ui.updateVisitCount(visitData.total_visits);
+    
     if (!sessionStorage.getItem('visit_pinged')) {
         await api.pingVisit();
         const updatedVisitData = await api.fetchVisitSummary();
         ui.updateVisitCount(updatedVisitData.total_visits);
         sessionStorage.setItem('visit_pinged', 'true');
     }
+
     setInterval(() => api.fetchActivityData().then(ui.drawActivityChart), config.REFRESH_INTERVAL);
 }
+
+document.addEventListener('DOMContentLoaded', main);
