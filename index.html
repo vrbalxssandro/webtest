@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Homepage</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Scripts for the map visualization and helpers -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.world.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
-    <!-- Script for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- This empty div will be our custom cursor -->
     <div id="kaomoji-cursor">(´• ω •`)</div>
 
     <div class="container">
@@ -25,12 +22,11 @@
         </main>
 
         <aside class="sidebar">
-            <!-- This card is now a draggable window -->
-            <div id="stats-window" class="draggable-window card">
-                <div class="window-header">Stats</div>
+            <!-- NEW "Dashboard" card combines Stats and Now Playing -->
+            <div class="dashboard-card card">
                 <div class="stats-container">
                      <div class="stat-box" id="visits-box" title="Click to see visit map!">
-                        <h2>Site Visits</h2>
+                        <h2>Total Visits</h2>
                         <p id="visits-count">0</p>
                     </div>
                     <div class="stat-box">
@@ -38,17 +34,14 @@
                         <p id="posts-count">0</p>
                     </div>
                 </div>
-            </div>
-
-            <!-- New "Now Playing" Widget -->
-            <div id="now-playing" class="card">
-                <h2>Now Playing</h2>
-                <div class="now-playing-content">
-                    <p>Loading...</p>
+                <div id="now-playing" class="now-playing-container">
+                    <div class="now-playing-content">
+                        <p>Loading...</p>
+                    </div>
                 </div>
             </div>
 
-            <div id="timeline-container" class="timeline-container card">
+            <div class="timeline-container card">
                 <h2>Live Comments</h2>
                 <div class="post-box">
                     <input type="text" id="username-input" placeholder="Your name">
@@ -67,7 +60,6 @@
                 </audio>
             </div>
             
-            <!-- New Infographics Chart -->
             <div class="card">
                 <h2>Recent Activity</h2>
                 <div class="chart-container">
@@ -77,7 +69,6 @@
         </aside>
     </div>
 
-    <!-- The modal for our map visualization -->
     <div id="map-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-button">×</button>
