@@ -8,8 +8,9 @@
 // -------------------
 const config = {
     PROJECTS: [
-        { title: 'Notebook', description: 'A simple Notebook', image: './images/notebook.png', url: './notebook/index.html' },
-        { title: 'Another Project', description: 'This is another project', image: './images/placeholder.png', url: '#' }
+        { title: 'Notebook', description: 'A simple Notebook', url: './notebook/index.html' },
+        { title: 'Another Project', description: 'This is another project', url: '#' },
+        { title: 'Temp', description: 'Temp.', url: '#' }
     ],
     API_ENDPOINTS: {
         comments: '/api/comments',
@@ -344,7 +345,16 @@ const ui = {
             const card = document.createElement('a');
             card.href = project.url;
             card.className = 'project-card';
-            card.innerHTML = `<img src="${project.image}" alt="${project.title} thumbnail"><div class="project-card-content"><h3>${escapeHTML(project.title)}</h3><p>${escapeHTML(project.description)}</p></div>`;
+
+            let cardHTML = '';
+            if (project.image) {
+                cardHTML += `<img src="${project.image}" alt="${project.title} thumbnail">`;
+            } else {
+                card.classList.add('no-image');
+            }
+            
+            cardHTML += `<div class="project-card-content"><h3>${escapeHTML(project.title)}</h3><p>${escapeHTML(project.description)}</p></div>`;
+            card.innerHTML = cardHTML;
             dom.projectGrid.appendChild(card);
         });
     },

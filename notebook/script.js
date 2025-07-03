@@ -25,6 +25,27 @@ let isFocusMode = true;
 let sessionStartTime = Date.now();
 powerToolsBtn.innerHTML = `<img src="./assets/power-tools.svg" alt="Power Tools">`;
 
+// --- NEW: Visit Logging ---
+const VISIT_API_ENDPOINT = '/api/notebook/visit';
+const VISIT_SESSION_KEY = 'notebook_visit_pinged';
+
+async function pingNotebookVisit() {
+    // Only ping once per browser session to avoid counting reloads.
+    if (sessionStorage.getItem(VISIT_SESSION_KEY)) {
+        return;
+    }
+    try {
+        const response = await fetch(VISIT_API_ENDPOINT, { method: 'POST' });
+        if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+        }
+        sessionStorage.setItem(VISIT_SESSION_KEY, 'true');
+        console.log('Notebook visit logged.');
+    } catch (error) {
+        console.error("Could not ping notebook visit:", error);
+    }
+}
+
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     loadState();
@@ -32,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     updateAll();
     setInterval(updateSessionTimer, 1000);
+    pingNotebookVisit(); // <-- NEW: Call the visit logger when the page loads
 });
 
 // --- Core Functions ---
