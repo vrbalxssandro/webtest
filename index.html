@@ -22,17 +22,17 @@
         <section class="about-section card">
             <h2>About Me</h2>
             <p>
-                Nothing much here yet 
-                I will update this website soon with actual stuff
+                Welcome to my little corner of the internet. I'm a developer and creator passionate about building 
+                interactive and fun web experiences. This page is a showcase of my work and a playground for new ideas.
             </p>
             <p>
-                Feel free to leave a comment. 
+                Feel free to look around, play with the bouncy balls, leave a comment, or listen to some music!
             </p>
         </section>
 
         <main class="projects-main">
             <h1>My Projects</h1>
-            <p class="subtitle">Here are some random Projects.</p>
+            <p class="subtitle">Here are some of the things I've been working on.</p>
             <div id="project-grid" class="project-grid"></div>
         </main>
 
@@ -60,7 +60,6 @@
                 </div>
             </div>
 
-            <!-- NEW SOUNDCLOUD-STYLE MUSIC PLAYER -->
             <div id="music-player-container" class="card">
                 <h2>Music Player</h2>
                 <div class="track-info">
@@ -122,6 +121,31 @@
     </div>
     
     <div id="physics-container"></div>
+
+    <!-- First Visit Consent Modal (Simplified Version) -->
+    <div id="consent-modal-overlay" class="consent-modal-overlay">
+        <div class="consent-modal-content">
+            <h3>Welcome to My Page!</h3>
+            <p>
+                To help me understand my audience, I'd like to log your visit. This is completely optional. If you accept, I will anonymously log:
+            </p>
+            <ul>
+                <li>That a visit occurred.</li>
+                <li>The country you are visiting from (e.g., "Germany").</li>
+            </ul>
+            <p>
+                I <strong>do not</strong> log your IP address or any other personal data. For more details, please see the <a href="./privacy.html" style="color:#d38fba;" target="_blank">Privacy Policy</a>.
+            </p>
+            <div class="consent-username-box">
+                <label for="consent-username">Optionally, you can leave a name so I know who dropped by:</label>
+                <input type="text" id="consent-username" placeholder="Your name or nickname">
+            </div>
+            <div class="consent-buttons">
+                <button id="consent-accept-btn" class="consent-accept">Accept & Continue</button>
+                <button id="consent-decline-btn" class="consent-decline">Decline</button>
+            </div>
+        </div>
+    </div>
 
     <script src="oneko.js"></script>
     <script src="script.js"></script>

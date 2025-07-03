@@ -59,13 +59,14 @@ const dom = {
 // API CALLS
 // -------------------
 const api = {
-    async pingVisit() {
-        try {
-            const response = await fetch(config.API_ENDPOINTS.pingVisit, { method: 'POST' });
-            if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
-        } catch (error) {
-            console.error("Could not ping visit:", error);
-        }
+    // This is the new function to post the visit data
+    async postVisit(payload) {
+        const response = await fetch(config.API_ENDPOINTS.pingVisit, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error(`Failed to post visit. Status: ${response.status}`);
     },
     async fetchVisitSummary() {
         try {
@@ -107,6 +108,69 @@ const api = {
         if (!response.ok) throw new Error('Failed to post comment.');
     }
 };
+
+// --- NEW: GDPR CONSENT AND VISIT LOGGING ---
+const CONSENT_KEY = 'gdpr_consent_choice_v1';
+
+async function logVisit(username = null) {
+    // Use sessionStorage to prevent re-logging on page reloads within the same session.
+    if (sessionStorage.getItem('visit_pinged')) {
+        console.log("Visit already logged for this session.");
+        return;
+    }
+    try {
+        await api.postVisit({ username });
+        sessionStorage.setItem('visit_pinged', 'true');
+        console.log('Visit has been logged. Thank you!');
+
+        // After successfully logging, refresh the visit count on the page
+        const updatedVisitData = await api.fetchVisitSummary();
+        ui.updateVisitCount(updatedVisitData.total_visits);
+    } catch (error) {
+        console.error("Failed to log visit:", error);
+    }
+}
+
+function handleConsentFlow() {
+    const consentChoice = localStorage.getItem(CONSENT_KEY);
+
+    // If a choice was already made, respect it.
+    if (consentChoice) {
+        // If they accepted previously, we can log this new session's visit (anonymously).
+        if (consentChoice === 'accepted') {
+            logVisit();
+        }
+        return; // Do not show the modal.
+    }
+
+    // If no choice has been made, show the modal.
+    const modal = document.getElementById('consent-modal-overlay');
+    // We no longer need the "thanks" view or the "OKAY" button elements here
+    const acceptBtn = document.getElementById('consent-accept-btn');
+    const declineBtn = document.getElementById('consent-decline-btn');
+    const usernameInput = document.getElementById('consent-username');
+
+    if (!modal) {
+        console.error("Consent modal not found in the DOM.");
+        return;
+    }
+
+    modal.classList.add('visible');
+
+    acceptBtn.addEventListener('click', () => {
+        localStorage.setItem(CONSENT_KEY, 'accepted');
+        const username = usernameInput.value.trim();
+        logVisit(username || null); // Pass username to the log function
+        modal.classList.remove('visible'); // <<< CHANGE: Hide modal immediately
+    });
+
+    declineBtn.addEventListener('click', () => {
+        localStorage.setItem(CONSENT_KEY, 'declined');
+        modal.classList.remove('visible'); // <<< CHANGE: Hide modal immediately
+    });
+
+    // The logic for the "OKAY" button is no longer needed.
+}
 
 // -------------------
 // BOUNCY BALLS
@@ -452,67 +516,10 @@ function escapeHTML(str) { const p = document.createElement("p"); p.appendChild(
 // -------------------
 // INITIALIZATION
 // -------------------
-function setupCursorToggle() {
-    if (!dom.cursorToggleBtn || !dom.kaomojiCursor) return;
-    const ALIGNMENT_KEY = 'cursorAlignment';
-    let currentAlignment = localStorage.getItem(ALIGNMENT_KEY) || 'center-mouth';
-    const applyAlignment = (alignment) => {
-        dom.kaomojiCursor.classList.remove('center-mouth', 'top-left');
-        dom.kaomojiCursor.classList.add(alignment);
-        localStorage.setItem(ALIGNMENT_KEY, alignment);
-    };
-    applyAlignment(currentAlignment);
-    dom.cursorToggleBtn.addEventListener('click', () => {
-        const newAlignment = dom.kaomojiCursor.classList.contains('center-mouth') ? 'top-left' : 'center-mouth';
-        applyAlignment(newAlignment);
-    });
-}
-
-function initializeMusicPlayer() {
-    if (!dom.musicPlayerContainer) return;
-    const playIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M8 5v14l11-7z"></path></svg>`;
-    const pauseIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>`;
-    dom.playBtn.innerHTML = playIcon;
-
-    const wavesurfer = WaveSurfer.create({
-        container: '#waveform', waveColor: '#a09398', progressColor: '#d38fba',
-        barWidth: 3, barRadius: 3, barGap: 2, height: 70, responsive: true, hideScrollbar: true,
-    });
-
-    const formatTime = (seconds) => { const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return `${m}:${s < 10 ? '0' : ''}${s}`; };
-    wavesurfer.on('ready', () => { dom.waveformLoading.style.opacity = '0'; dom.timeTotal.textContent = formatTime(wavesurfer.getDuration()); wavesurfer.play(); });
-    wavesurfer.on('audioprocess', () => { dom.timeCurrent.textContent = formatTime(wavesurfer.getCurrentTime()); });
-    wavesurfer.on('play', () => { dom.playBtn.innerHTML = pauseIcon; });
-    wavesurfer.on('pause', () => { dom.playBtn.innerHTML = playIcon; });
-    wavesurfer.on('finish', () => { dom.playBtn.innerHTML = playIcon; wavesurfer.seekTo(0); dom.timeCurrent.textContent = "0:00"; });
-    wavesurfer.on('error', (err) => { dom.waveformLoading.textContent = `Error: ${err}`; dom.waveformLoading.style.opacity = '1'; });
-    dom.playBtn.onclick = () => wavesurfer.playPause();
-    dom.volumeSlider.oninput = (e) => wavesurfer.setVolume(e.target.value);
-    dom.volumeIcon.onclick = () => wavesurfer.toggleMute();
-    wavesurfer.on('volume', (volume) => { dom.volumeIcon.textContent = wavesurfer.getMute() ? '🔇' : '🔊'; });
-
-    const loadFile = (file) => { if (file) { dom.waveformLoading.textContent = 'Loading...'; dom.waveformLoading.style.opacity = '1'; dom.trackTitle.textContent = file.name; wavesurfer.load(URL.createObjectURL(file)); } };
-    dom.audioUpload.onchange = (e) => loadFile(e.target.files[0]);
-    dom.musicPlayerContainer.ondragover = (e) => e.preventDefault();
-    dom.musicPlayerContainer.ondrop = (e) => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); };
-}
-
+function setupCursorToggle() { if (!dom.cursorToggleBtn || !dom.kaomojiCursor) return; const ALIGNMENT_KEY = 'cursorAlignment'; let currentAlignment = localStorage.getItem(ALIGNMENT_KEY) || 'center-mouth'; const applyAlignment = (alignment) => { dom.kaomojiCursor.classList.remove('center-mouth', 'top-left'); dom.kaomojiCursor.classList.add(alignment); localStorage.setItem(ALIGNMENT_KEY, alignment); }; applyAlignment(currentAlignment); dom.cursorToggleBtn.addEventListener('click', () => { const newAlignment = dom.kaomojiCursor.classList.contains('center-mouth') ? 'top-left' : 'center-mouth'; applyAlignment(newAlignment); }); }
+function initializeMusicPlayer() { if (!dom.musicPlayerContainer) return; const playIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M8 5v14l11-7z"></path></svg>`; const pauseIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>`; dom.playBtn.innerHTML = playIcon; const wavesurfer = WaveSurfer.create({ container: '#waveform', waveColor: '#a09398', progressColor: '#d38fba', barWidth: 3, barRadius: 3, barGap: 2, height: 70, responsive: true, hideScrollbar: true, }); const formatTime = (seconds) => { const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return `${m}:${s < 10 ? '0' : ''}${s}`; }; wavesurfer.on('ready', () => { dom.waveformLoading.style.opacity = '0'; dom.timeTotal.textContent = formatTime(wavesurfer.getDuration()); wavesurfer.play(); }); wavesurfer.on('audioprocess', () => { dom.timeCurrent.textContent = formatTime(wavesurfer.getCurrentTime()); }); wavesurfer.on('play', () => { dom.playBtn.innerHTML = pauseIcon; }); wavesurfer.on('pause', () => { dom.playBtn.innerHTML = playIcon; }); wavesurfer.on('finish', () => { dom.playBtn.innerHTML = playIcon; wavesurfer.seekTo(0); dom.timeCurrent.textContent = "0:00"; }); wavesurfer.on('error', (err) => { dom.waveformLoading.textContent = `Error: ${err}`; dom.waveformLoading.style.opacity = '1'; }); dom.playBtn.onclick = () => wavesurfer.playPause(); dom.volumeSlider.oninput = (e) => wavesurfer.setVolume(e.target.value); dom.volumeIcon.onclick = () => wavesurfer.toggleMute(); wavesurfer.on('volume', (volume) => { dom.volumeIcon.textContent = wavesurfer.getMute() ? '🔇' : '🔊'; }); const loadFile = (file) => { if (file) { dom.waveformLoading.textContent = 'Loading...'; dom.waveformLoading.style.opacity = '1'; dom.trackTitle.textContent = file.name; wavesurfer.load(URL.createObjectURL(file)); } }; dom.audioUpload.onchange = (e) => loadFile(e.target.files[0]); dom.musicPlayerContainer.ondragover = (e) => e.preventDefault(); dom.musicPlayerContainer.ondrop = (e) => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); }; }
 function bindEventListeners() {
-    if (dom.postButton) {
-        dom.postButton.addEventListener('click', async () => {
-            const username = dom.usernameInput.value.trim() || 'Anonymous';
-            const message = dom.commentInput.value.trim();
-            if (!message) return alert('Message cannot be empty.');
-            dom.postButton.disabled = true; dom.postButton.textContent = '...';
-            try {
-                await api.postComment(username, message);
-                const comments = await api.fetchComments();
-                ui.renderComments(comments);
-                dom.commentInput.value = '';
-            } catch (error) { console.error('Error posting comment:', error); alert('An error occurred.');
-            } finally { dom.postButton.disabled = false; dom.postButton.textContent = 'Post'; }
-        });
-    }
+    if (dom.postButton) { dom.postButton.addEventListener('click', async () => { const username = dom.usernameInput.value.trim() || 'Anonymous'; const message = dom.commentInput.value.trim(); if (!message) return alert('Message cannot be empty.'); dom.postButton.disabled = true; dom.postButton.textContent = '...'; try { await api.postComment(username, message); const comments = await api.fetchComments(); ui.renderComments(comments); dom.commentInput.value = ''; } catch (error) { console.error('Error posting comment:', error); alert('An error occurred.'); } finally { dom.postButton.disabled = false; dom.postButton.textContent = 'Post'; } }); }
     if (dom.commentInput) dom.commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dom.postButton.click(); } });
     if (dom.visitsBox) dom.visitsBox.addEventListener('click', async () => ui.showVisitorMap(await api.fetchVisitSummary()));
     if (dom.closeModalButton) dom.closeModalButton.addEventListener('click', () => { dom.mapModal.classList.remove('visible'); document.body.classList.remove('modal-open'); });
@@ -520,14 +527,16 @@ function bindEventListeners() {
 }
 
 async function main() {
+    // Initial UI setup that can run before consent
     ui.setupKaomojiCursor();
     setupCursorToggle();
     bindEventListeners();
     initializeMusicPlayer();
     ui.renderProjects(config.PROJECTS);
     physics.init();
-    
-    const [comments, visitData, activityData] = await Promise.all([
+
+    // Fetch and render non-tracking data immediately
+    const [comments, initialVisitData, activityData] = await Promise.all([
         api.fetchComments(),
         api.fetchVisitSummary(),
         api.fetchActivityData()
@@ -535,16 +544,14 @@ async function main() {
     
     ui.renderComments(comments);
     ui.drawActivityChart(activityData);
-    ui.updateVisitCount(visitData.total_visits);
+    ui.updateVisitCount(initialVisitData.total_visits);
     
-    if (!sessionStorage.getItem('visit_pinged')) {
-        await api.pingVisit();
-        const updatedVisitData = await api.fetchVisitSummary();
-        ui.updateVisitCount(updatedVisitData.total_visits);
-        sessionStorage.setItem('visit_pinged', 'true');
-    }
+    // Handle the consent flow. This will trigger the visit log if consent is given.
+    handleConsentFlow();
 
+    // Set up a regular refresh for the activity chart
     setInterval(() => api.fetchActivityData().then(ui.drawActivityChart), config.REFRESH_INTERVAL);
 }
 
+// Start the application
 document.addEventListener('DOMContentLoaded', main);
