@@ -19,7 +19,7 @@ const LOCAL_STORAGE_KEY = 'paper.content';
 const THEME_KEY = 'paper.theme';
 const FOCUS_KEY = 'paper.focus';
 const THEMES = ['theme-paper', 'theme-dusk', 'theme-blueprint'];
-const COLORS = { text: ['#3a352f', '#c2beb8', '#e56d6d', '#6da2e5', '#6de58e'], highlight: ['#d9c8b3', '#4a4446', '#e56d6d44', '#6da2e544', '#6de58e44'] };
+const COLORS = { text: ['#3a352f', '#c2beb8', '#e56d6d', '#6da2e5', '#6de58e'], highlight: ['#d9c8b3', '#4a4446', '#e6d6d44', '#6da2e544', '#6de58e44'] };
 let currentThemeIndex = 0;
 let isFocusMode = true;
 let sessionStartTime = Date.now();
@@ -32,17 +32,16 @@ const NOTEBOOK_VISIT_SESSION_KEY = 'notebook_visit_pinged';
 // CRUCIAL: Use the *same* key as the main homepage script to share consent.
 const CONSENT_LOCALSTORAGE_KEY = 'gdpr_consent_choice_v1';
 
-// This function sends the ping if called. It does not check for consent itself.
+// This function sends the ping. It is only called if consent is given.
 async function pingNotebookVisit() {
-    // Use sessionStorage to avoid pinging on every reload within a single session.
     if (sessionStorage.getItem(NOTEBOOK_VISIT_SESSION_KEY)) {
+        console.log("Notebook visit already logged for this session.");
         return;
     }
     try {
-        // This endpoint doesn't need to send any data, just a POST request.
         await fetch(NOTEBOOK_VISIT_API_ENDPOINT, { method: 'POST' });
         sessionStorage.setItem(NOTEBOOK_VISIT_SESSION_KEY, 'true');
-        console.log('Notebook visit logged (consent was given on main page).');
+        console.log("SUCCESS: Notebook visit ping sent.");
     } catch (error) {
         console.error("Could not ping notebook visit:", error);
     }
@@ -52,13 +51,16 @@ async function pingNotebookVisit() {
 function handleNotebookTracking() {
     const consent = localStorage.getItem(CONSENT_LOCALSTORAGE_KEY);
 
-    // This is the core logic:
-    // Only ping if consent was explicitly stored as 'accepted'.
-    // If it's 'declined' or null (not set), it will do nothing.
+    // Added for debugging so you can see exactly what the script is doing.
+    console.log(`Notebook Page: Checking consent. Value for '${CONSENT_LOCALSTORAGE_KEY}' is:`, consent);
+
+    // This is the corrected, strict check.
     if (consent === 'accepted') {
+        console.log("Consent is 'accepted'. Proceeding with visit ping.");
         pingNotebookVisit();
     } else {
-        console.log("Notebook visit not logged (consent was declined or not given on main page).");
+        // This block will now correctly execute if consent is 'declined' or has not been set (null).
+        console.log("Consent is not 'accepted'. Visit will not be logged.");
     }
 }
 
