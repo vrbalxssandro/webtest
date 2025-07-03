@@ -52,7 +52,19 @@ const dom = {
     physicsContainer: document.getElementById('physics-container'),
     addBallBtn: document.getElementById('add-ball-btn'),
     collisionToggle: document.getElementById('collision-toggle'),
-    zIndexToggle: document.getElementById('z-index-toggle')
+    zIndexToggle: document.getElementById('z-index-toggle'),
+    // Physics Tuner Elements
+    tunePhysicsBtn: document.getElementById('tune-physics-btn'),
+    physicsModal: document.getElementById('physics-modal'),
+    closePhysicsModalBtn: document.querySelector('#physics-modal .close-button'),
+    gravitySlider: document.getElementById('gravity-slider'),
+    gravityValue: document.getElementById('gravity-value'),
+    dragSlider: document.getElementById('drag-slider'),
+    dragValue: document.getElementById('drag-value'),
+    elasticitySlider: document.getElementById('elasticity-slider'),
+    elasticityValue: document.getElementById('elasticity-value'),
+    removeAllBallsBtn: document.getElementById('remove-all-balls-btn'),
+    resetPhysicsBtn: document.getElementById('reset-physics-btn'),
 };
 
 // -------------------
@@ -177,9 +189,14 @@ function handleConsentFlow() {
 // -------------------
 const physics = {
     balls: [],
+    defaults: {
+        gravity: 0.2,
+        drag: 0.999,
+        bounceFactor: 0.99,
+    },
     gravity: 0.2,
-    drag: 0.99,
-    bounceFactor: 0.95,
+    drag: 0.999,
+    bounceFactor: 0.99,
     collisionsEnabled: true,
     mouse: { x: 0, y: 0, vx: 0, vy: 0, down: false },
     lastMousePos: { x: 0, y: 0 },
@@ -196,7 +213,7 @@ const physics = {
         const ball = {
             el: document.createElement('div'),
             radius: radius,
-            mass: radius * radius, // Added mass based on area (r^2)
+            mass: radius * radius, // Mass based on area (r^2)
             x: x || Math.random() * (window.innerWidth - radius * 2) + radius,
             y: y || Math.random() * (window.innerHeight / 2),
             vx: Math.random() * 10 - 5,
@@ -372,7 +389,6 @@ const ui = {
     setupKaomojiCursor() {
         if (!dom.kaomojiCursor) return;
         
-        // Helper functions to calculate contrast for dynamic cursor color
         const getLuminance = (color) => {
             const rgb = color.match(/\d+/g);
             if (!rgb) return 0;
@@ -534,89 +550,99 @@ function initializeMusicPlayer() {
     const wavesurfer = WaveSurfer.create({ container: '#waveform', waveColor: '#a09398', progressColor: '#d38fba', barWidth: 3, barRadius: 3, barGap: 2, height: 70, responsive: true, hideScrollbar: true, });
     const formatTime = (seconds) => { const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return `${m}:${s < 10 ? '0' : ''}${s}`; };
 
-    // --- NEW REAL-TIME VISUALIZER SETUP ---
-    const realtimeCanvas = document.getElementById('realtime-waveform');
-    const realtimeCtx = realtimeCanvas.getContext('2d');
-    let analyser;
-    let dataArray;
-    let animationFrameId;
-
-    function setupRealtimeAnalyser() {
-        const audioCtx = wavesurfer.getAudioContext();
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 2048; // Higher values give more detail
-        wavesurfer.backend.source.connect(analyser);
-        dataArray = new Uint8Array(analyser.fftSize);
-    }
-
-    function drawRealtimeWaveform() {
-        animationFrameId = requestAnimationFrame(drawRealtimeWaveform);
-        analyser.getByteTimeDomainData(dataArray);
-
-        // Make the canvas responsive
-        const canvasWidth = realtimeCanvas.clientWidth;
-        const canvasHeight = realtimeCanvas.clientHeight;
-        if (realtimeCanvas.width !== canvasWidth || realtimeCanvas.height !== canvasHeight) {
-            realtimeCanvas.width = canvasWidth;
-            realtimeCanvas.height = canvasHeight;
-        }
-
-        realtimeCtx.fillStyle = getComputedStyle(realtimeCanvas).getPropertyValue('background-color');
-        realtimeCtx.fillRect(0, 0, canvasWidth, canvasHeight);
-        realtimeCtx.lineWidth = 2;
-        realtimeCtx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color');
-        realtimeCtx.beginPath();
-        const sliceWidth = canvasWidth * 1.0 / analyser.fftSize;
-        let x = 0;
-        for (let i = 0; i < analyser.fftSize; i++) {
-            const v = dataArray[i] / 128.0; // Values are 0-255, 128 is the center
-            const y = v * canvasHeight / 2;
-            if (i === 0) {
-                realtimeCtx.moveTo(x, y);
-            } else {
-                realtimeCtx.lineTo(x, y);
-            }
-            x += sliceWidth;
-        }
-        realtimeCtx.lineTo(canvasWidth, canvasHeight / 2);
-        realtimeCtx.stroke();
-    }
-    // --- END OF NEW VISUALIZER SETUP ---
-
     wavesurfer.on('ready', () => {
         dom.waveformLoading.style.opacity = '0';
         dom.timeTotal.textContent = formatTime(wavesurfer.getDuration());
-        setupRealtimeAnalyser(); // Set up the analyser when the track is loaded
         wavesurfer.play();
     });
-    wavesurfer.on('audioprocess', () => { dom.timeCurrent.textContent = formatTime(wavesurfer.getCurrentTime()); });
+
     wavesurfer.on('play', () => {
         dom.playBtn.innerHTML = pauseIcon;
-        realtimeCanvas.style.display = 'block'; // Show the new visualizer
-        drawRealtimeWaveform(); // Start drawing
     });
+
+    wavesurfer.on('audioprocess', () => { dom.timeCurrent.textContent = formatTime(wavesurfer.getCurrentTime()); });
+    
     wavesurfer.on('pause', () => {
         dom.playBtn.innerHTML = playIcon;
-        cancelAnimationFrame(animationFrameId); // Stop drawing
     });
+
     wavesurfer.on('finish', () => {
         dom.playBtn.innerHTML = playIcon;
         wavesurfer.seekTo(0);
         dom.timeCurrent.textContent = "0:00";
-        cancelAnimationFrame(animationFrameId); // Stop drawing and clear
-        realtimeCtx.clearRect(0, 0, realtimeCanvas.width, realtimeCanvas.height);
-        realtimeCanvas.style.display = 'none'; // Hide it again
     });
+
     wavesurfer.on('error', (err) => { dom.waveformLoading.textContent = `Error: ${err}`; dom.waveformLoading.style.opacity = '1'; });
+    
+    const loadFile = (file) => {
+        if (file) {
+            dom.waveformLoading.textContent = 'Loading...';
+            dom.waveformLoading.style.opacity = '1';
+            dom.trackTitle.textContent = file.name;
+            wavesurfer.load(URL.createObjectURL(file));
+        }
+    };
+
     dom.playBtn.onclick = () => wavesurfer.playPause();
     dom.volumeSlider.oninput = (e) => wavesurfer.setVolume(e.target.value);
     dom.volumeIcon.onclick = () => wavesurfer.toggleMute();
     wavesurfer.on('volume', (volume) => { dom.volumeIcon.textContent = wavesurfer.getMute() ? '🔇' : '🔊'; });
-    const loadFile = (file) => { if (file) { dom.waveformLoading.textContent = 'Loading...'; dom.waveformLoading.style.opacity = '1'; dom.trackTitle.textContent = file.name; wavesurfer.load(URL.createObjectURL(file)); } };
     dom.audioUpload.onchange = (e) => loadFile(e.target.files[0]);
     dom.musicPlayerContainer.ondragover = (e) => e.preventDefault();
     dom.musicPlayerContainer.ondrop = (e) => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); };
 }
+
+function initializePhysicsTuner() {
+    const { 
+        physicsModal, tunePhysicsBtn, closePhysicsModalBtn,
+        gravitySlider, gravityValue, dragSlider, dragValue, 
+        elasticitySlider, elasticityValue, removeAllBallsBtn, resetPhysicsBtn
+    } = dom;
+
+    const setValues = (defaults) => {
+        gravitySlider.value = defaults.gravity;
+        gravityValue.textContent = defaults.gravity.toFixed(2);
+        dragSlider.value = defaults.drag;
+        dragValue.textContent = defaults.drag.toFixed(3);
+        elasticitySlider.value = defaults.bounceFactor;
+        elasticityValue.textContent = defaults.bounceFactor.toFixed(2);
+    };
+
+    setValues(physics.defaults);
+
+    tunePhysicsBtn.addEventListener('click', () => physicsModal.classList.add('visible'));
+    closePhysicsModalBtn.addEventListener('click', () => physicsModal.classList.remove('visible'));
+    physicsModal.addEventListener('click', (e) => {
+        if (e.target === physicsModal) physicsModal.classList.remove('visible');
+    });
+
+    gravitySlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        physics.gravity = val;
+        gravityValue.textContent = val.toFixed(2);
+    });
+    dragSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        physics.drag = val;
+        dragValue.textContent = val.toFixed(3);
+    });
+    elasticitySlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        physics.bounceFactor = val;
+        elasticityValue.textContent = val.toFixed(2);
+    });
+
+    removeAllBallsBtn.addEventListener('click', () => {
+        physics.balls.forEach(ball => ball.el.remove());
+        physics.balls = [];
+    });
+
+    resetPhysicsBtn.addEventListener('click', () => {
+        Object.assign(physics, physics.defaults);
+        setValues(physics.defaults);
+    });
+}
+
 function bindEventListeners() {
     if (dom.postButton) { dom.postButton.addEventListener('click', async () => { const username = dom.usernameInput.value.trim() || 'Anonymous'; const message = dom.commentInput.value.trim(); if (!message) return alert('Message cannot be empty.'); dom.postButton.disabled = true; dom.postButton.textContent = '...'; try { await api.postComment(username, message); const comments = await api.fetchComments(); ui.renderComments(comments); dom.commentInput.value = ''; } catch (error) { console.error('Error posting comment:', error); alert('An error occurred.'); } finally { dom.postButton.disabled = false; dom.postButton.textContent = 'Post'; } }); }
     if (dom.commentInput) dom.commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dom.postButton.click(); } });
@@ -631,8 +657,9 @@ async function main() {
     setupCursorToggle();
     bindEventListeners();
     initializeMusicPlayer();
-    ui.renderProjects(config.PROJECTS);
     physics.init();
+    initializePhysicsTuner(); // Initialize the new tuner
+    ui.renderProjects(config.PROJECTS);
 
     // Fetch and render non-tracking data immediately
     const [comments, initialVisitData, activityData] = await Promise.all([
