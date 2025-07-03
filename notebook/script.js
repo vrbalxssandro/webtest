@@ -26,13 +26,13 @@ let sessionStartTime = Date.now();
 powerToolsBtn.innerHTML = `<img src="./assets/power-tools.svg" alt="Power Tools">`;
 
 
-// --- MODIFIED: GDPR-Compliant Visit Logging for Notebook ---
+// --- CORRECTED: GDPR-Compliant Visit Logging for Notebook ---
 const NOTEBOOK_VISIT_API_ENDPOINT = '/api/notebook/visit';
 const NOTEBOOK_VISIT_SESSION_KEY = 'notebook_visit_pinged';
-// CRUCIAL: Use the *same* key as the main homepage script to share consent.
+// CRUCIAL: Use the *same* localStorage key as the main homepage script to share consent.
 const CONSENT_LOCALSTORAGE_KEY = 'gdpr_consent_choice_v1';
 
-// This function sends the ping if called.
+// This function sends the ping if called. It does not check consent itself.
 async function pingNotebookVisit() {
     // Use sessionStorage to avoid pinging on every reload within a single session.
     if (sessionStorage.getItem(NOTEBOOK_VISIT_SESSION_KEY)) {
@@ -41,21 +41,23 @@ async function pingNotebookVisit() {
     try {
         await fetch(NOTEBOOK_VISIT_API_ENDPOINT, { method: 'POST' });
         sessionStorage.setItem(NOTEBOOK_VISIT_SESSION_KEY, 'true');
-        console.log('Notebook visit logged (consent was given).');
+        console.log('Notebook visit logged (consent was previously given).');
     } catch (error) {
         console.error("Could not ping notebook visit:", error);
     }
 }
 
-// This new function checks for consent before deciding to ping.
+// This function checks for consent before deciding whether to ping.
 function handleNotebookTracking() {
     const consent = localStorage.getItem(CONSENT_LOCALSTORAGE_KEY);
 
-    // Only ping if consent was explicitly accepted on the main page.
+    // This is the core logic fix:
+    // ONLY ping if consent was explicitly accepted ('true').
+    // If the value is 'declined' or null (not set), it will not ping.
     if (consent === 'true') {
         pingNotebookVisit();
     } else {
-        console.log("Notebook visit not logged (no consent given).");
+        console.log("Notebook visit not logged (consent was declined or not given).");
     }
 }
 
@@ -67,7 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     updateAll();
     setInterval(updateSessionTimer, 1000);
-    handleNotebookTracking(); // <-- CRUCIAL CHANGE: Call the consent-aware function.
+    // This is the crucial line that ensures consent is checked first.
+    handleNotebookTracking();
 });
 
 // --- Core Functions (No changes below this line) ---

@@ -3,67 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notebook</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <title>My Homepage</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Scripts for the map visualization and helpers -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.world.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+    <!-- Script for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Script for the custom music player -->
+    <script src="https://unpkg.com/wavesurfer.js"></script>
 </head>
-<body class="theme-paper">
+<body>
+    <div id="kaomoji-cursor">(´• ω •`)</div>
 
-    <!-- Floating Formatting Toolbar (controlled by JS) -->
-    <div id="toolbar" class="toolbar">
-        <button data-command="bold">B</button>
-        <button data-command="italic">i</button>
-        <button data-command="formatBlock" data-value="h2">H2</button>
-        <button data-command="formatBlock" data-value="h3">H3</button>
-        <button data-command="formatBlock" data-value="blockquote">“</button>
-        <button data-command="insertHTML" data-value="<pre><code>Code...</code></pre>">{}</button>
-        <!-- Color pickers will be added here by JS -->
-    </div>
+    <div class="container">
+        <section class="about-section card">
+            <h2>About Me</h2>
+            <p>
+                Welcome to my little corner of the internet. I'm a developer and creator passionate about building 
+                interactive and fun web experiences. This page is a showcase of my work and a playground for new ideas.
+            </p>
+            <p>
+                Feel free to look around, play with the bouncy balls, leave a comment, or listen to some music!
+            </p>
+        </section>
 
-    <main class="page-container">
-        <div id="editor" contenteditable="true" spellcheck="true"></div>
-    </main>
+        <main class="projects-main">
+            <h1>My Projects</h1>
+            <p class="subtitle">Here are some of the things I've been working on.</p>
+            <div id="project-grid" class="project-grid"></div>
+        </main>
 
-    <footer class="page-footer">
-        <div class="controls">
-            <div class="control-group">
-                <button id="theme-btn" data-tooltip="Change Theme (Alt+T)">T</button>
-                <button id="focus-btn" class="active" data-tooltip="Toggle Focus Mode (Alt+F)">F</button>
-            </div>
-            <div class="control-group">
-                <button id="new-page-btn" data-tooltip="New Page (Alt+N)">N</button>
-                <button id="download-btn" data-tooltip="Download .txt (Alt+D)">D</button>
-            </div>
-            <div class="control-group">
-                <button id="power-tools-btn" data-tooltip="Power Tools (Alt+P)"></button>
-                <div id="power-tools-menu" class="power-tools-menu hidden">
-                    <button data-tool="removeNewlines">Remove Newlines</button>
-                    <button data-tool="toLowerCase">lowercase</button>
-                    <button data-tool="toUpperCase">UPPERCASE</button>
-                    <button data-tool="prettifyJson">Prettify JSON</button>
-                    <button data-tool="sortLines">Sort Lines</button>
+        <aside class="sidebar">
+            <div class="stats-card card">
+                 <div class="stat-box" id="visits-box" title="Click to see visit map!">
+                    <h2>Total Visits</h2>
+                    <p id="visits-count">0</p>
+                </div>
+                <div class="stat-box">
+                    <h2>Total Posts</h2>
+                    <p id="posts-count">0</p>
                 </div>
             </div>
-        </div>
-        <div class="stats">
-            <div>
-                <span id="word-count">0 words</span>
-                •
-                <span id="char-count">0 characters</span>
-            </div>
-            <div>
-                <span id="paragraph-count">0 paragraphs</span>
-                •
-                <span id="reading-time">~0 min read</span>
-            </div>
-            <div>
-                <span id="session-timer">Focus: 00:00</span>
-            </div>
-        </div>
-    </footer>
 
+            <div class="timeline-container card">
+                <h2>Live Comments</h2>
+                <div class="post-box">
+                    <input type="text" id="username-input" placeholder="Your name">
+                    <textarea id="comment-input" placeholder="Leave a public comment!"></textarea>
+                    <button id="post-button">Post</button>
+                </div>
+                <div id="timeline" class="timeline">
+                    <p class="loading-message">Loading comments...</p>
+                </div>
+            </div>
+
+            <div id="music-player-container" class="card">
+                <h2>Music Player</h2>
+                <div class="track-info">
+                    <span id="track-title">No track loaded</span>
+                </div>
+                <div id="waveform"></div>
+                <div id="waveform-loading">Drop an audio file or click "Upload"</div>
+                <div class="custom-player-controls">
+                    <button id="play-btn" class="control-btn"></button>
+                    <span id="time-current">0:00</span>
+                    <span id="time-total">0:00</span>
+                    <div class="volume-control">
+                        <span id="volume-icon">🔊</span>
+                        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+                    </div>
+                    <label for="audio-upload" class="upload-btn">Upload</label>
+                    <input type="file" id="audio-upload" accept="audio/*" style="display: none;">
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Recent Activity</h2>
+                <div class="chart-container">
+                    <canvas id="recent-activity-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="settings-card card">
+                <h2>Settings</h2>
+                <div class="setting-row">
+                    <span>Cursor Alignment</span>
+                    <button id="cursor-toggle-btn">Toggle</button>
+                </div>
+                 <div class="setting-row">
+                    <span>Bring Balls to Front</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="z-index-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span>Ball Collisions</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="collision-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <button id="add-ball-btn">Add a Ball</button>
+            </div>
+        </aside>
+    </div>
+
+    <div id="map-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-button">×</button>
+            <h3>Visitor Map</h3>
+            <div id="map-container"></div>
+        </div>
+    </div>
+    
+    <div id="physics-container"></div>
+
+    <!-- First Visit Consent Modal (Simplified Version) -->
+    <div id="consent-modal-overlay" class="consent-modal-overlay">
+        <div class="consent-modal-content">
+            <h3>Welcome to My Page!</h3>
+            <p>
+                To help me understand my audience, I'd like to log your visit. This is completely optional. If you accept, I will anonymously log:
+            </p>
+            <ul>
+                <li>That a visit occurred.</li>
+                <li>The country you are visiting from (e.g., "Germany").</li>
+            </ul>
+            <p>
+                I <strong>do not</strong> log your IP address or any other personal data. For more details, please see the <a href="./privacy.html" style="color:#d38fba;" target="_blank">Privacy Policy</a>.
+            </p>
+            <div class="consent-username-box">
+                <label for="consent-username">Optionally, you can leave a name so I know who dropped by:</label>
+                <input type="text" id="consent-username" placeholder="Your name or nickname">
+            </div>
+            <div class="consent-buttons">
+                <button id="consent-accept-btn" class="consent-accept">Accept & Continue</button>
+                <button id="consent-decline-btn" class="consent-decline">Decline</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="oneko.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
