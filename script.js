@@ -196,6 +196,7 @@ const physics = {
         const ball = {
             el: document.createElement('div'),
             radius: radius,
+            mass: radius * radius, // Added mass based on area (r^2)
             x: x || Math.random() * (window.innerWidth - radius * 2) + radius,
             y: y || Math.random() * (window.innerHeight / 2),
             vx: Math.random() * 10 - 5,
@@ -261,10 +262,12 @@ const physics = {
                 
                 const dx = ball2.x - ball1.x;
                 const dy = ball2.y - ball1.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+                const distanceSq = dx * dx + dy * dy;
                 const minDistance = ball1.radius + ball2.radius;
+                const minDistanceSq = minDistance * minDistance;
 
-                if (distance < minDistance) {
+                if (distanceSq < minDistanceSq) {
+                    const distance = Math.sqrt(distanceSq);
                     this.resolveCollision(ball1, ball2, dx, dy, distance, minDistance);
                 }
             }
@@ -272,32 +275,38 @@ const physics = {
     },
     
     resolveCollision(ball1, ball2, dx, dy, distance, minDistance) {
-        // Resolve overlap
-        const overlap = minDistance - distance;
+        // --- 1. Separation and Collision Normal ---
         const nx = dx / distance;
         const ny = dy / distance;
-        ball1.x -= nx * overlap * 0.5;
-        ball1.y -= ny * overlap * 0.5;
-        ball2.x += nx * overlap * 0.5;
-        ball2.y += ny * overlap * 0.5;
+        const overlap = minDistance - distance;
 
-        // Elastic collision response
-        const tx = -ny;
-        const ty = nx;
-        
-        const dpTan1 = ball1.vx * tx + ball1.vy * ty;
-        const dpTan2 = ball2.vx * tx + ball2.vy * ty;
+        // Move balls apart based on inverse mass to prevent sticking
+        const totalMass = ball1.mass + ball2.mass;
+        ball1.x -= nx * overlap * (ball2.mass / totalMass);
+        ball1.y -= ny * overlap * (ball2.mass / totalMass);
+        ball2.x += nx * overlap * (ball1.mass / totalMass);
+        ball2.y += ny * overlap * (ball1.mass / totalMass);
+
+        // --- 2. Realistic Collision Response ---
+        // Decompose velocities into normal and tangential components
+        const tangentX = -ny;
+        const tangentY = nx;
+
+        const dpTan1 = ball1.vx * tangentX + ball1.vy * tangentY;
+        const dpTan2 = ball2.vx * tangentX + ball2.vy * tangentY;
         
         const dpNorm1 = ball1.vx * nx + ball1.vy * ny;
         const dpNorm2 = ball2.vx * nx + ball2.vy * ny;
 
-        const m1 = dpNorm2;
-        const m2 = dpNorm1;
+        // Conservation of momentum in 1D (along the normal)
+        const m1 = (dpNorm1 * (ball1.mass - ball2.mass) + 2 * ball2.mass * dpNorm2) / totalMass;
+        const m2 = (dpNorm2 * (ball2.mass - ball1.mass) + 2 * ball1.mass * dpNorm1) / totalMass;
         
-        ball1.vx = tx * dpTan1 + nx * m1;
-        ball1.vy = ty * dpTan1 + ny * m1;
-        ball2.vx = tx * dpTan2 + nx * m2;
-        ball2.vy = ty * dpTan2 + ny * m2;
+        // Update velocities: tangential component is unchanged, normal component is updated based on mass
+        ball1.vx = tangentX * dpTan1 + nx * m1;
+        ball1.vy = tangentY * dpTan1 + ny * m1;
+        ball2.vx = tangentX * dpTan2 + nx * m2;
+        ball2.vy = tangentY * dpTan2 + ny * m2;
     },
 
     addEventListeners() {
@@ -517,7 +526,97 @@ function escapeHTML(str) { const p = document.createElement("p"); p.appendChild(
 // INITIALIZATION
 // -------------------
 function setupCursorToggle() { if (!dom.cursorToggleBtn || !dom.kaomojiCursor) return; const ALIGNMENT_KEY = 'cursorAlignment'; let currentAlignment = localStorage.getItem(ALIGNMENT_KEY) || 'center-mouth'; const applyAlignment = (alignment) => { dom.kaomojiCursor.classList.remove('center-mouth', 'top-left'); dom.kaomojiCursor.classList.add(alignment); localStorage.setItem(ALIGNMENT_KEY, alignment); }; applyAlignment(currentAlignment); dom.cursorToggleBtn.addEventListener('click', () => { const newAlignment = dom.kaomojiCursor.classList.contains('center-mouth') ? 'top-left' : 'center-mouth'; applyAlignment(newAlignment); }); }
-function initializeMusicPlayer() { if (!dom.musicPlayerContainer) return; const playIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M8 5v14l11-7z"></path></svg>`; const pauseIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>`; dom.playBtn.innerHTML = playIcon; const wavesurfer = WaveSurfer.create({ container: '#waveform', waveColor: '#a09398', progressColor: '#d38fba', barWidth: 3, barRadius: 3, barGap: 2, height: 70, responsive: true, hideScrollbar: true, }); const formatTime = (seconds) => { const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return `${m}:${s < 10 ? '0' : ''}${s}`; }; wavesurfer.on('ready', () => { dom.waveformLoading.style.opacity = '0'; dom.timeTotal.textContent = formatTime(wavesurfer.getDuration()); wavesurfer.play(); }); wavesurfer.on('audioprocess', () => { dom.timeCurrent.textContent = formatTime(wavesurfer.getCurrentTime()); }); wavesurfer.on('play', () => { dom.playBtn.innerHTML = pauseIcon; }); wavesurfer.on('pause', () => { dom.playBtn.innerHTML = playIcon; }); wavesurfer.on('finish', () => { dom.playBtn.innerHTML = playIcon; wavesurfer.seekTo(0); dom.timeCurrent.textContent = "0:00"; }); wavesurfer.on('error', (err) => { dom.waveformLoading.textContent = `Error: ${err}`; dom.waveformLoading.style.opacity = '1'; }); dom.playBtn.onclick = () => wavesurfer.playPause(); dom.volumeSlider.oninput = (e) => wavesurfer.setVolume(e.target.value); dom.volumeIcon.onclick = () => wavesurfer.toggleMute(); wavesurfer.on('volume', (volume) => { dom.volumeIcon.textContent = wavesurfer.getMute() ? '🔇' : '🔊'; }); const loadFile = (file) => { if (file) { dom.waveformLoading.textContent = 'Loading...'; dom.waveformLoading.style.opacity = '1'; dom.trackTitle.textContent = file.name; wavesurfer.load(URL.createObjectURL(file)); } }; dom.audioUpload.onchange = (e) => loadFile(e.target.files[0]); dom.musicPlayerContainer.ondragover = (e) => e.preventDefault(); dom.musicPlayerContainer.ondrop = (e) => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); }; }
+function initializeMusicPlayer() {
+    if (!dom.musicPlayerContainer) return;
+    const playIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M8 5v14l11-7z"></path></svg>`;
+    const pauseIcon = `<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>`;
+    dom.playBtn.innerHTML = playIcon;
+    const wavesurfer = WaveSurfer.create({ container: '#waveform', waveColor: '#a09398', progressColor: '#d38fba', barWidth: 3, barRadius: 3, barGap: 2, height: 70, responsive: true, hideScrollbar: true, });
+    const formatTime = (seconds) => { const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return `${m}:${s < 10 ? '0' : ''}${s}`; };
+
+    // --- NEW REAL-TIME VISUALIZER SETUP ---
+    const realtimeCanvas = document.getElementById('realtime-waveform');
+    const realtimeCtx = realtimeCanvas.getContext('2d');
+    let analyser;
+    let dataArray;
+    let animationFrameId;
+
+    function setupRealtimeAnalyser() {
+        const audioCtx = wavesurfer.getAudioContext();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048; // Higher values give more detail
+        wavesurfer.backend.source.connect(analyser);
+        dataArray = new Uint8Array(analyser.fftSize);
+    }
+
+    function drawRealtimeWaveform() {
+        animationFrameId = requestAnimationFrame(drawRealtimeWaveform);
+        analyser.getByteTimeDomainData(dataArray);
+
+        // Make the canvas responsive
+        const canvasWidth = realtimeCanvas.clientWidth;
+        const canvasHeight = realtimeCanvas.clientHeight;
+        if (realtimeCanvas.width !== canvasWidth || realtimeCanvas.height !== canvasHeight) {
+            realtimeCanvas.width = canvasWidth;
+            realtimeCanvas.height = canvasHeight;
+        }
+
+        realtimeCtx.fillStyle = getComputedStyle(realtimeCanvas).getPropertyValue('background-color');
+        realtimeCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+        realtimeCtx.lineWidth = 2;
+        realtimeCtx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color');
+        realtimeCtx.beginPath();
+        const sliceWidth = canvasWidth * 1.0 / analyser.fftSize;
+        let x = 0;
+        for (let i = 0; i < analyser.fftSize; i++) {
+            const v = dataArray[i] / 128.0; // Values are 0-255, 128 is the center
+            const y = v * canvasHeight / 2;
+            if (i === 0) {
+                realtimeCtx.moveTo(x, y);
+            } else {
+                realtimeCtx.lineTo(x, y);
+            }
+            x += sliceWidth;
+        }
+        realtimeCtx.lineTo(canvasWidth, canvasHeight / 2);
+        realtimeCtx.stroke();
+    }
+    // --- END OF NEW VISUALIZER SETUP ---
+
+    wavesurfer.on('ready', () => {
+        dom.waveformLoading.style.opacity = '0';
+        dom.timeTotal.textContent = formatTime(wavesurfer.getDuration());
+        setupRealtimeAnalyser(); // Set up the analyser when the track is loaded
+        wavesurfer.play();
+    });
+    wavesurfer.on('audioprocess', () => { dom.timeCurrent.textContent = formatTime(wavesurfer.getCurrentTime()); });
+    wavesurfer.on('play', () => {
+        dom.playBtn.innerHTML = pauseIcon;
+        realtimeCanvas.style.display = 'block'; // Show the new visualizer
+        drawRealtimeWaveform(); // Start drawing
+    });
+    wavesurfer.on('pause', () => {
+        dom.playBtn.innerHTML = playIcon;
+        cancelAnimationFrame(animationFrameId); // Stop drawing
+    });
+    wavesurfer.on('finish', () => {
+        dom.playBtn.innerHTML = playIcon;
+        wavesurfer.seekTo(0);
+        dom.timeCurrent.textContent = "0:00";
+        cancelAnimationFrame(animationFrameId); // Stop drawing and clear
+        realtimeCtx.clearRect(0, 0, realtimeCanvas.width, realtimeCanvas.height);
+        realtimeCanvas.style.display = 'none'; // Hide it again
+    });
+    wavesurfer.on('error', (err) => { dom.waveformLoading.textContent = `Error: ${err}`; dom.waveformLoading.style.opacity = '1'; });
+    dom.playBtn.onclick = () => wavesurfer.playPause();
+    dom.volumeSlider.oninput = (e) => wavesurfer.setVolume(e.target.value);
+    dom.volumeIcon.onclick = () => wavesurfer.toggleMute();
+    wavesurfer.on('volume', (volume) => { dom.volumeIcon.textContent = wavesurfer.getMute() ? '🔇' : '🔊'; });
+    const loadFile = (file) => { if (file) { dom.waveformLoading.textContent = 'Loading...'; dom.waveformLoading.style.opacity = '1'; dom.trackTitle.textContent = file.name; wavesurfer.load(URL.createObjectURL(file)); } };
+    dom.audioUpload.onchange = (e) => loadFile(e.target.files[0]);
+    dom.musicPlayerContainer.ondragover = (e) => e.preventDefault();
+    dom.musicPlayerContainer.ondrop = (e) => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); };
+}
 function bindEventListeners() {
     if (dom.postButton) { dom.postButton.addEventListener('click', async () => { const username = dom.usernameInput.value.trim() || 'Anonymous'; const message = dom.commentInput.value.trim(); if (!message) return alert('Message cannot be empty.'); dom.postButton.disabled = true; dom.postButton.textContent = '...'; try { await api.postComment(username, message); const comments = await api.fetchComments(); ui.renderComments(comments); dom.commentInput.value = ''; } catch (error) { console.error('Error posting comment:', error); alert('An error occurred.'); } finally { dom.postButton.disabled = false; dom.postButton.textContent = 'Post'; } }); }
     if (dom.commentInput) dom.commentInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dom.postButton.click(); } });
