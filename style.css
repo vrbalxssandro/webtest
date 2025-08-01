@@ -342,3 +342,26 @@ input:checked + .slider:before { transform: translateX(22px); background-color: 
     background: var(--card-hover-bg);
     color: var(--text-color);
 }
+
+/* === Legal Info Card === */
+.legal-card h2 {
+    margin-bottom: 10px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.legal-card a {
+    display: block; /* Makes them stack vertically */
+    padding: 8px 0;
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.legal-card a:hover {
+    color: var(--accent-color);
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self';
+                   script-src 'self' https://cdnjs.cloudflare.com;
+                   style-src 'self' https://fonts.googleapis.com;
+                   font-src https://fonts.gstatic.com;
+                   media-src 'self' blob:;
+                   img-src 'self' blob:;
+                   object-src 'none';
+                   frame-src blob:;
+                   base-uri 'self';">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonymous Zip Viewer</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar for Supported Types -->
+        <aside id="sidebar">
+            <h2>Supported Types</h2>
+            <div id="supported-types-list">
+                <!-- This will be populated by JavaScript -->
+            </div>
+        </aside>
+
+        <!-- Main Application Content -->
+        <div id="main-content">
+            <header>
+                <a href="../index.html" class="back-to-home-btn">
+                    <i class="material-icons">arrow_back</i>
+                    <span>Back to Homepage</span>
+                </a>
+
+                <h1>Anonymous Zip Viewer</h1>
+                <p class="privacy-notice">Your files are processed locally in your browser and are never uploaded to any server.</p>
+                <p class="warning-notice"><b>Warning:</b> Opening very large files (e.g., > 20MB) may cause the browser to freeze or become unresponsive for a few moments.</p>
+            </header>
+
+            <main>
+                <label for="zip-input" class="file-label">
+                    <i class="material-icons">upload_file</i> Choose a .zip file
+                </label>
+                <input type="file" id="zip-input" accept=".zip" class="file-input">
+
+                <div id="zip-contents" class="hidden">
+                    <h2>Files in Zip:</h2>
+                    
+                    <div id="file-action-bar">
+                        <div class="select-all-container">
+                            <input type="checkbox" id="select-all-checkbox">
+                            <label for="select-all-checkbox">Select All</label>
+                        </div>
+                        <button id="download-selected-btn" disabled>
+                            <i class="material-icons">archive</i> Download Selected as .zip
+                        </button>
+                    </div>
+
+                    <div id="file-tree-container"></div>
+                    <h2>File Content Preview:</h2>
+                    <div id="preview-controls" class="hidden"></div>
+                    <div id="file-content-display" aria-live="polite">
+                        <span class="placeholder">Select a file from the tree above to view its content.</span>
+                    </div>
+                </div>
+            </main>
+             <footer>
+                <p>Powered by Client-Side JavaScript</p>
+    		<div style="margin-top: 1em; padding-top: 1em; border-top: 1px solid #444;">
+        	    <a href="impressum.html" style="color: #888; margin: 0 10px;">Impressum (Legal Notice)</a>
+        	    <a href="privacy.html" style="color: #888; margin: 0 10px;">Datenschutz (Privacy Policy)</a>
+    		</div>
+            </footer>
+        </div>
+    </div>
+    
+    <template id="hex-row-template">
+        <div class="hex-row">
+            <span class="hex-offset"></span>
+            <span class="hex-data"></span>
+            <span class="hex-ascii"></span>
+        </div>
+    </template>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="app.js"></script>
+
+</body>
+</html>

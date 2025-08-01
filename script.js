@@ -9,7 +9,7 @@
 const config = {
     PROJECTS: [
         { title: 'Notebook', description: 'A simple Notebook', url: './notebook/index.html' },
-        { title: 'Another Project', description: 'This is another project', url: '#' },
+        { title: 'Anonymous Zip Viewer', description: 'An anonymous zip file viewer that processes files locally in your browser. To ensure privacy, your files are never uploaded to a server.', url: './ZipViewer/index.html' },
         { title: 'Temp', description: 'Temp.', url: '#' }
     ],
     API_ENDPOINTS: {
